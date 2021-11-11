@@ -1,0 +1,1 @@
+to run desktop app `./gradlew desktop:run`
