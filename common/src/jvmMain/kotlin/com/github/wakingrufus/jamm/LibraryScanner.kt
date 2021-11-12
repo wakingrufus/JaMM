@@ -1,5 +1,6 @@
 package com.github.wakingrufus.jamm
 
+import org.jaudiotagger.audio.AudioFile
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import org.jaudiotagger.tag.Tag
@@ -29,58 +30,114 @@ fun scan(rootDir: File): Library {
             ?: emptyList()
         val filesToProcess = rootDir.flatten()
         val playlistsMutableList: MutableList<Playlist> = mutableListOf()
-        val albumArtists: MutableMap<AlbumArtist, MutableSet<Album>> = mutableMapOf()
-        val albumArtistsAlbums: MutableMap<AlbumArtist, MutableSet<String>> = mutableMapOf()
+        val albumArtistsAlbums: MutableMap<AlbumArtist, MutableSet<AlbumKey>> = mutableMapOf()
+        val albums: MutableMap<AlbumKey, Album> = mutableMapOf()
+        val albumTracks: MutableMap<AlbumKey, MutableList<Track>> = mutableMapOf()
         val errors: MutableList<String> = mutableListOf()
         val warnings: MutableList<String> = mutableListOf()
-        filesToProcess.forEach {
-            if (it.name.endsWith(".m3u")) {
-                playlistsMutableList.add(parse(rootDir, it))
-            } else if (Extensions.music.contains(it.extension.toLowerCase())) {
-                try {
-                    AudioFileIO.logger.level = Level.WARNING
-                    ID3v23Tag.logger.level = Level.WARNING
-                    val f = AudioFileIO.read(it)
-                    val tag: Tag = f.tag
-                    tag.getFirst(FieldKey.ALBUM_ARTIST)
-                    val albumArtist: AlbumArtist? = if (tag.hasField(FieldKey.ALBUM_ARTIST)) {
-                        AlbumArtist(tag.getFirst(FieldKey.ALBUM_ARTIST))
-                    } else if (tag.hasField(FieldKey.ARTIST)) {
-                        warnings.add("${it.name} has no album-artist tag. falling back to artist")
-                        AlbumArtist(tag.getFirst(FieldKey.ARTIST))
-                    } else {
-                        errors.add("${it.name} has no artist tag")
-                        null
-                    }
-                    albumArtist?.run {
-                        val albumName = tag.getFirst(FieldKey.ALBUM);
-                        val newAlbum = albumArtistsAlbums.getOrPut(this){ mutableSetOf()}.add(albumName)
-                        if(newAlbum) {
-                            albumArtists.getOrPut(this) { mutableSetOf() }
-                                .add(
-                                    Album(
-                                        this,
-                                        tag.getFirst(FieldKey.ALBUM),
-                                        tag.getFirst(FieldKey.ALBUM_YEAR)?.toIntOrNull()
-                                            ?.let { LocalDate.of(it, 1, 1) },
-                                        it.parentFile.resolve("cover.jpg").let {
-                                            if (it.exists()) it.readBytes() else tag.firstArtwork.binaryData
-                                        }
-                                    ))
+        val tracks: MutableList<Track> = mutableListOf()
+        val trackPaths: MutableMap<String, Track> = mutableMapOf()
+        filesToProcess.forEach { file ->
+            if (file.name.endsWith(".m3u")) {
+                playlistsMutableList.add(parse(rootDir, file))
+            } else if (Extensions.music.contains(file.extension.toLowerCase())) {
+                AudioFileIO.logger.level = Level.WARNING
+                ID3v23Tag.logger.level = Level.WARNING
+                val audioFile = AudioFileIO.read(file)
+                val tr = buildTrack(file, audioFile)
+                when (tr) {
+                    is TrackResult.TrackFailure -> errors.add(tr.error)
+                    is TrackResult.TrackSuccess -> {
+                        val track = tr.track
+                        tracks.add(track)
+                        trackPaths[file.toRelativeString(rootDir)] = track
+                        val tag: Tag = audioFile.tag
+
+                        val album = albums.computeIfAbsent(track.albumKey) {
+                            buildAlbum(audioFile, track).also {
+                                albumArtistsAlbums.computeIfAbsent(it.artist) { mutableSetOf() }.add(track.albumKey)
+                            }
                         }
+                        if (album.coverImage == null) {
+                            file.parentFile.resolve("cover.jpg").let {
+                                album.coverImage = if (it.exists()) it.readBytes()
+                                else if (tag.artworkList.isNotEmpty()) {
+                                    tag.firstArtwork?.binaryData
+                                } else null
+                            }
+                        }
+                        albumTracks.computeIfAbsent(track.albumKey) {
+                            mutableListOf()
+                        }.add(track)
                     }
-                } catch (e: Exception) {
-                    errors.add("error processing file ${it.path} ${e.message} ${e.cause?.message}")
                 }
             }
         }
         return Library(
             playlists = playlists,
-            albumArtists = albumArtists,
+            albumArtists = albumArtistsAlbums,
             errors = errors,
-            trackCount = filesToProcess.size
+            warnings = warnings,
+            trackCount = filesToProcess.size,
+            albums = albums,
+            tracks = tracks,
+            trackPaths = trackPaths,
+            albumTracks = albumTracks
         )
     } else {
         return Library()
     }
+}
+
+sealed class TrackResult {
+    class TrackSuccess(val track: Track) : TrackResult()
+    class TrackFailure(val error: String) : TrackResult()
+}
+
+fun buildAlbum(audioFile: AudioFile, track: Track): Album {
+    return Album(
+        albumKey = track.albumKey,
+        artist = track.albumArtist,
+        name = track.album,
+        releaseDate = audioFile.tag.getFirst(FieldKey.ALBUM_YEAR)?.toIntOrNull()
+            ?.let { LocalDate.of(it, 1, 1) }
+    )
+}
+
+fun buildTrack(file: File, audioFile: AudioFile): TrackResult {
+    if (audioFile.tag == null) {
+        return TrackResult.TrackFailure("tag is null in file ${file.path}")
+    }
+    val tag = audioFile.tag
+    val albumArtist = if (tag.hasField(FieldKey.ALBUM_ARTIST)) {
+        AlbumArtist(tag.getFirst(FieldKey.ALBUM_ARTIST))
+    } else if (tag.hasField(FieldKey.ARTIST)) {
+        AlbumArtist(tag.getFirst(FieldKey.ARTIST))
+    } else {
+        AlbumArtist("*UNKNOWN*")
+    }
+
+    val albumName = if (tag.hasField(FieldKey.ALBUM)) tag.getFirst(FieldKey.ALBUM).let {
+        it.ifBlank { "*UNKNOWN*" }
+    } else "*UNKNOWN*"
+    val releaseId =
+        if (tag.hasField(FieldKey.MUSICBRAINZ_ORIGINAL_RELEASE_ID)) tag.getFirst(FieldKey.MUSICBRAINZ_ORIGINAL_RELEASE_ID)
+            .let {
+                it.ifBlank { null }
+            }
+        else null
+    val albumKey = AlbumKey(
+        id = releaseId,
+        albumArtist = albumArtist.name,
+        albumName = albumName
+    )
+    val track = Track(
+        title = tag.getFirst(FieldKey.TITLE),
+        album = albumName,
+        albumArtist = albumArtist,
+        trackNumber = tag.getFirst(FieldKey.TRACK).toIntOrNull(),
+        albumKey = albumKey,
+        file = file
+    )
+    return TrackResult.TrackSuccess(track)
 }
