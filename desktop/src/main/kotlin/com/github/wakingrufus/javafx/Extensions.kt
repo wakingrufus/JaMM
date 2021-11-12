@@ -1,6 +1,5 @@
 package com.github.wakingrufus.javafx
 
-import com.github.wakingrufus.javafx.onChange
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.Property
 import javafx.beans.value.ObservableValue
@@ -139,9 +138,7 @@ inline fun <reified T> Pane.tableView(
     items: ObservableList<T>,
     config: TableView<T>.() -> Unit = {}
 ): TableView<T> {
-    val tv = TableView(items)
-    this.children.add(tv)
-    return tv
+    return TableView(items).attachTo(this, config)
 }
 
 inline fun <reified T : Node> BorderPane.right(block: T.() -> Unit = {}): T {
