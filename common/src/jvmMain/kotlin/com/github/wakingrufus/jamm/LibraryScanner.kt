@@ -11,7 +11,10 @@ import java.util.logging.Level
 
 
 object Extensions {
-    val music = listOf("ogg", "mp3")
+    val music = listOf(
+        //   "ogg", not supported by openjfx
+        "mp3"
+    )
 }
 
 fun File.flatten(): List<File> = listFiles().flatMap {
@@ -61,10 +64,11 @@ fun scan(rootDir: File): Library {
                         if (album.coverImage == null) {
                             file.parentFile.resolve("cover.jpg").let {
                                 album.coverImage = if (it.exists()) it.readBytes()
-                                else if (tag.artworkList.isNotEmpty()) {
-                                    tag.firstArtwork?.binaryData
-                                } else null
+                                else track.image
                             }
+                        }
+                        if (track.image == null && album.coverImage != null) {
+                            track.image = album.coverImage
                         }
                         albumTracks.computeIfAbsent(track.albumKey) {
                             mutableListOf()
@@ -137,7 +141,10 @@ fun buildTrack(file: File, audioFile: AudioFile): TrackResult {
         albumArtist = albumArtist,
         trackNumber = tag.getFirst(FieldKey.TRACK).toIntOrNull(),
         albumKey = albumKey,
-        file = file
+        file = file,
+        image = if (tag.artworkList.isNotEmpty()) {
+            tag.firstArtwork?.binaryData
+        } else null
     )
     return TrackResult.TrackSuccess(track)
 }

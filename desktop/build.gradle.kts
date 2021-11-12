@@ -1,7 +1,7 @@
 plugins {
     application
     kotlin("jvm")
-    id("org.openjfx.javafxplugin") version "0.0.9"
+    id("org.openjfx.javafxplugin") version "0.0.10"
 }
 
 dependencies {
@@ -24,8 +24,8 @@ dependencies {
 }
 
 javafx {
-    version = "11.0.2"
-    modules("javafx.controls")
+    version = "16"
+    modules("javafx.controls", "javafx.media")
 }
 
 java {

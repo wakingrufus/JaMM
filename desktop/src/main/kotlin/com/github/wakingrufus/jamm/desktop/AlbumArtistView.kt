@@ -13,13 +13,10 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.event.EventHandler
 import javafx.scene.image.Image
-import javafx.scene.layout.BorderPane
-import javafx.scene.layout.StackPane
-import javafx.scene.layout.TilePane
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
 import java.io.ByteArrayInputStream
 
-class AlbumArtistView(val library: Library) : BorderPane() {
+class AlbumArtistView(val library: Library, val mediaPlayer: MediaPlayerController) : BorderPane() {
     val albumArtists = FXCollections.observableArrayList(library.albumArtists.keys.sortedBy { it.name })
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedAlbumArtist = SimpleObjectProperty<AlbumArtist>().also {
@@ -37,7 +34,7 @@ class AlbumArtistView(val library: Library) : BorderPane() {
                 bindSelected(selectedAlbumArtist)
             }
         }
-        center<BorderPane>{
+        center<BorderPane> {
             center<TilePane> {
                 this.children.bind(albums) { album ->
                     VBox().apply {
@@ -61,6 +58,14 @@ class AlbumArtistView(val library: Library) : BorderPane() {
                     column<Track, String>("Title") { it.value.title.toProperty() }
                     column<Track, String>("Album") { it.value.album.toProperty() }
                     column<Track, String>("Album Artist") { it.value.albumArtist.name.toProperty() }
+                }
+            }
+        }
+        bottom<HBox> {
+
+            button("Play") {
+                action {
+                    mediaPlayer.play(tracks)
                 }
             }
         }

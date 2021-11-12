@@ -58,9 +58,7 @@ fun <T> Pane.listview(values: ObservableList<T>? = null, op: ListView<T>.() -> U
     }
 
 fun Pane.buttonBar(block: ButtonBar.() -> Unit): ButtonBar {
-    return ButtonBar().apply(block).also {
-        this.children.add(it)
-    }
+    return ButtonBar().attachTo(this, block)
 }
 
 fun <T> ListView<T>.bindSelected(property: Property<T>) {
@@ -70,9 +68,7 @@ fun <T> ListView<T>.bindSelected(property: Property<T>) {
 }
 
 fun Pane.button(text: String, block: Button.() -> Unit): Button {
-    return Button(text).apply(block).also {
-        this.children.add(it)
-    }
+    return Button(text).attachTo(this, block)
 }
 
 fun Group.buttonBar(block: ButtonBar.() -> Unit): ButtonBar {
@@ -131,6 +127,13 @@ fun <S> TableView<S>.addColumnInternal(column: TableColumn<S, *>, index: Int? = 
 fun Pane.label(text: String): Label {
     return this.add {
         this.text = text
+    }
+}
+
+fun Pane.label(text: String, config: Label.() -> Unit): Label {
+    return this.add {
+        this.text = text
+        config(this)
     }
 }
 
