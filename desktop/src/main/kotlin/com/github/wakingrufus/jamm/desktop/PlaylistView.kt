@@ -9,7 +9,7 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.StackPane
 import java.nio.file.Paths
 
-class PlaylistView(val library: Library) : BorderPane() {
+class PlaylistView(val library: ObservableLibrary) : BorderPane() {
     val playlists = FXCollections.observableArrayList(library.playlists.sortedBy { it.name })
     val tracks = FXCollections.observableArrayList<Pair<PlaylistTrack , Track?>>()
     val selectedPlayList = SimpleObjectProperty<Playlist>().also {

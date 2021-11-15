@@ -26,15 +26,15 @@ import java.io.File
 
 class Main : Application(), Logging {
 
-
+val observableLibrary : ObservableLibrary = ObservableLibrary()
 
     override fun start(primaryStage: Stage) {
         logger().info("starting")
         var artistsTab: Tab? = null
         var playlistsTab: Tab? = null
         val playQueue = FXCollections.observableArrayList<Track>()
-        var library = Library()
-        val mediaPlayerController = object : com.github.wakingrufus.jamm.desktop.MediaPlayerController {
+    //    var library = Library()
+        val mediaPlayerController = object : MediaPlayerController {
             override fun play(tracks: List<Track>) {
                 logger().info("adding ${tracks.size} to queue")
                 playQueue.clear()
@@ -87,19 +87,21 @@ class Main : Application(), Logging {
                             if (!libraryDir.exists()) {
                                 logger().error("Music directory not found")
                             } else {
-                                GlobalScope.launch(Dispatchers.JavaFx) {
-                                    library = scan(libraryDir)
-                                    library.warnings.forEach {
-                                        logger().warn(it)
-                                    }
-                                    library.errors.forEach {
-                                        logger().error(it)
-                                    }
-                                    logger().info("tracks: ${library.trackCount}")
-                                    logger().info("album artists: ${library.albumArtists.keys.size}")
-                                    artistsTab?.content = AlbumArtistView(library, mediaPlayerController)
-                                    playlistsTab?.content = PlaylistView(library)
-                                }
+                           //     GlobalScope.launch(Dispatchers.IO) {
+//                                    library = scan(libraryDir)
+//                                    library.warnings.forEach {
+//                                        logger().warn(it)
+//                                    }
+//                                    library.errors.forEach {
+//                                        logger().error(it)
+//                                    }
+                                    observableLibrary.scan(libraryDir)
+                        //        }
+                               //     logger().info("tracks: ${observableLibrary.trackCount}")
+                                    logger().info("album artists: ${observableLibrary.albumArtistsAlbums.keys.size}")
+                                    artistsTab?.content = AlbumArtistView(observableLibrary, mediaPlayerController)
+                                    playlistsTab?.content = PlaylistView(observableLibrary)
+
                             }
                         }
                     }

@@ -16,20 +16,19 @@ import javafx.scene.image.Image
 import javafx.scene.layout.*
 import java.io.ByteArrayInputStream
 
-class AlbumArtistView(val library: Library, val mediaPlayer: MediaPlayerController) : BorderPane() {
-    val albumArtists = FXCollections.observableArrayList(library.albumArtists.keys.sortedBy { it.name })
+class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane() {
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedAlbumArtist = SimpleObjectProperty<AlbumArtist>().also {
         it.onChange {
             albums.clear()
-            albums.setAll(library.albumArtists[it]?.map { library.albums[it] })
+            albums.setAll(library.albumArtistsAlbums[it]?.map { library.albums[it] })
         }
     }
     val albums = FXCollections.observableArrayList<Album>()
 
     init {
         left<StackPane> {
-            listview(albumArtists) {
+            listview(library.albumArtists) {
                 this.cellFactory = CustomStringCellFactory { it.name }
                 bindSelected(selectedAlbumArtist)
             }

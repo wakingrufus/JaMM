@@ -11,10 +11,7 @@ import java.util.logging.Level
 
 
 object Extensions {
-    val music = listOf(
-        //   "ogg", not supported by openjfx
-        "mp3"
-    )
+    val music = listOf("ogg", "mp3")
 }
 
 fun File.flatten(): List<File> = listFiles().flatMap {
@@ -47,17 +44,15 @@ fun scan(rootDir: File): Library {
                 AudioFileIO.logger.level = Level.WARNING
                 ID3v23Tag.logger.level = Level.WARNING
                 val audioFile = AudioFileIO.read(file)
-                val tr = buildTrack(file, audioFile)
+                val tr = buildTrack(rootDir, file, audioFile)
                 when (tr) {
-                    is TrackResult.TrackFailure -> errors.add(tr.error)
-                    is TrackResult.TrackSuccess -> {
+                    is ScanResult.ScanFailure -> errors.add(tr.error)
+                    is ScanResult.TrackSuccess -> {
                         val track = tr.track
                         tracks.add(track)
                         trackPaths[file.toRelativeString(rootDir)] = track
-                        val tag: Tag = audioFile.tag
-
                         val album = albums.computeIfAbsent(track.albumKey) {
-                            buildAlbum(audioFile, track).also {
+                            buildAlbum(track).also {
                                 albumArtistsAlbums.computeIfAbsent(it.artist) { mutableSetOf() }.add(track.albumKey)
                             }
                         }
@@ -93,24 +88,24 @@ fun scan(rootDir: File): Library {
     }
 }
 
-sealed class TrackResult {
-    class TrackSuccess(val track: Track) : TrackResult()
-    class TrackFailure(val error: String) : TrackResult()
+sealed class ScanResult {
+    class TrackSuccess(val track: Track) : ScanResult()
+    class PlaylistSuccess(val playlist: Playlist) : ScanResult()
+    class ScanFailure(val error: String) : ScanResult()
 }
 
-fun buildAlbum(audioFile: AudioFile, track: Track): Album {
+fun buildAlbum(track: Track): Album {
     return Album(
         albumKey = track.albumKey,
         artist = track.albumArtist,
         name = track.album,
-        releaseDate = audioFile.tag.getFirst(FieldKey.ALBUM_YEAR)?.toIntOrNull()
-            ?.let { LocalDate.of(it, 1, 1) }
+        releaseDate = track.releaseDate
     )
 }
 
-fun buildTrack(file: File, audioFile: AudioFile): TrackResult {
+fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
     if (audioFile.tag == null) {
-        return TrackResult.TrackFailure("tag is null in file ${file.path}")
+        return ScanResult.ScanFailure("tag is null in file ${file.path}")
     }
     val tag = audioFile.tag
     val albumArtist = if (tag.hasField(FieldKey.ALBUM_ARTIST)) {
@@ -142,9 +137,12 @@ fun buildTrack(file: File, audioFile: AudioFile): TrackResult {
         trackNumber = tag.getFirst(FieldKey.TRACK).toIntOrNull(),
         albumKey = albumKey,
         file = file,
+        releaseDate = tag.getFirst(FieldKey.ALBUM_YEAR)?.toIntOrNull()
+            ?.let { LocalDate.of(it, 1, 1) },
+        path= file.toRelativeString(rootFile),
         image = if (tag.artworkList.isNotEmpty()) {
             tag.firstArtwork?.binaryData
         } else null
     )
-    return TrackResult.TrackSuccess(track)
+    return ScanResult.TrackSuccess(track)
 }
