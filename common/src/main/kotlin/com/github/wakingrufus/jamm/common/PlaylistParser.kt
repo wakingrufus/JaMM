@@ -23,13 +23,3 @@ fun parse(libDir: File, file: File): Playlist {
         )
     }
 }
-
-fun resolveAbsPath(playlistFile: File, path: String): File {
-    val rel = playlistFile.parentFile.resolve(path)
-    val abs = Paths.get(path).toFile()
-    return if (rel.exists()) {
-        rel.absoluteFile
-    } else {
-        abs
-    }
-}

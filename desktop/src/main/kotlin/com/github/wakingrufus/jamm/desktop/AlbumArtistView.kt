@@ -7,10 +7,12 @@ import com.github.wakingrufus.javafx.*
 import javafx.beans.property.ReadOnlyListWrapper
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
+import javafx.collections.ListChangeListener
 import javafx.event.EventHandler
 import javafx.scene.image.Image
 import javafx.scene.layout.*
 import java.io.ByteArrayInputStream
+import java.lang.reflect.InvocationTargetException
 
 
 class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
@@ -42,7 +44,7 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
                                 this.fitWidth = 256.0
                             }
                         }
-                        label(album.name){
+                        label(album.name) {
                             this.style = "-fx-font-family: 'DejaVu Sans', Arial, sans-serif;"
                         }
                         onMouseClicked = EventHandler {
@@ -52,20 +54,22 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
                     }
                 }
             }
-            bottom<VBox> {
-                tableView(ReadOnlyListWrapper(tracks)) {
-                    column<Track, String>("#") { it.value.trackNumber.toString().toProperty() }
-                    column<Track, String>("Title") { it.value.title.toProperty() }
-                    column<Track, String>("Album") { it.value.album.toProperty() }
-                    column<Track, String>("Album Artist") { it.value.albumArtist.name.toProperty() }
+            bottom<BorderPane> {
+                center<StackPane> {
+                    tableView(ReadOnlyListWrapper(tracks)) {
+                        column<Track, String>("#") { it.value.trackNumber.toString().toProperty() }
+                        column<Track, String>("Title") { it.value.title.toProperty() }
+                        column<Track, String>("Album") { it.value.album.toProperty() }
+                        column<Track, String>("Album Artist") { it.value.albumArtist.name.toProperty() }
+                        autoResize()
+                    }
                 }
-            }
-        }
-        bottom<HBox> {
-
-            button("Play") {
-                action {
-                    mediaPlayer.play(tracks)
+                bottom<HBox> {
+                    button("Play") {
+                        action {
+                            mediaPlayer.play(tracks)
+                        }
+                    }
                 }
             }
         }

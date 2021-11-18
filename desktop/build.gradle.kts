@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     application
     kotlin("jvm")
@@ -16,6 +18,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.4.3")
     implementation("com.github.trilarion:java-vorbis-support:1.2.1")
     implementation("javax.servlet:javax.servlet-api:4.0.1")
+    implementation("org.jfxtras:jmetro:11.6.15")
 
     runtimeOnly("org.openjfx:javafx-graphics:${javafx.version}:win")
     runtimeOnly("org.openjfx:javafx-graphics:${javafx.version}:linux")
@@ -38,6 +41,7 @@ jlink {
     options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
     launcher {
         name = "jamm"
+        jvmArgs = listOf("--add-opens=javafx.controls/javafx.scene.control.skin=jamm.desktop")
     }
     forceMerge("javafx")
     //addExtraDependencies("javafx")
@@ -51,11 +55,11 @@ jlink {
         requires("jdk.jfr")
         requires("jdk.unsupported")
         provides("javax.sound.sampled.spi.AudioFileReader")
-            .with ("com.github.trilarion.sound.vorbis.sampled.spi.VorbisAudioFileReader")
+            .with("com.github.trilarion.sound.vorbis.sampled.spi.VorbisAudioFileReader")
         provides("kotlinx.coroutines.internal.MainDispatcherFactory")
-            .with ("kotlinx.coroutines.javafx.JavaFxDispatcherFactory")
+            .with("kotlinx.coroutines.javafx.JavaFxDispatcherFactory")
         provides("javax.sound.sampled.spi.FormatConversionProvider")
-            .with ("com.github.trilarion.sound.vorbis.sampled.spi.VorbisFormatConversionProvider")
+            .with("com.github.trilarion.sound.vorbis.sampled.spi.VorbisFormatConversionProvider")
     }
     jpackage {
         installerOptions = listOf("--description", project.description)
@@ -67,8 +71,14 @@ jlink {
 application {
     mainModule.set("jamm.desktop")
     mainClass.set("com.github.wakingrufus.jamm.desktop.Main")
+    applicationDefaultJvmArgs = listOf("--add-opens=javafx.controls/javafx.scene.control.skin=jamm.desktop")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    languageVersion = "1.4"
 }

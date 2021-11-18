@@ -11,7 +11,6 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.StackPane
 
 class PlaylistView(val library: ObservableLibrary) : BorderPane() {
-    val playlists = FXCollections.observableArrayList(library.playlists.sortedBy { it.name })
     val tracks = FXCollections.observableArrayList<Pair<PlaylistTrack, Track?>>()
     val selectedPlayList = SimpleObjectProperty<Playlist>().also {
         it.onChange { selected ->
@@ -25,7 +24,7 @@ class PlaylistView(val library: ObservableLibrary) : BorderPane() {
 
     init {
         left<StackPane> {
-            listview(playlists) {
+            listview(library.playlists) {
                 this.cellFactory = CustomStringCellFactory { it.name }
                 bindSelected(selectedPlayList)
             }
@@ -36,6 +35,7 @@ class PlaylistView(val library: ObservableLibrary) : BorderPane() {
                 column<Pair<PlaylistTrack, Track?>, String>("Title") { it.value.second?.title?.toProperty() ?: it.value.first.pathRelativeToLibrary.toProperty() }
                 column<Pair<PlaylistTrack, Track?>, String>("Album") { it.value.second?.album.toProperty() }
                 column<Pair<PlaylistTrack, Track?>, String>("Album Artist") { it.value.second?.albumArtist?.name.toProperty() }
+                autoResize()
             }
         }
     }

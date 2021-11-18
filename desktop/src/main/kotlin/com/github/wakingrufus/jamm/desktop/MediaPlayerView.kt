@@ -3,6 +3,7 @@ package com.github.wakingrufus.jamm.desktop
 import com.github.wakingrufus.jamm.common.Track
 import com.github.wakingrufus.javafx.*
 import javafx.collections.ObservableList
+import javafx.geometry.Pos
 import javafx.scene.image.Image
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
@@ -12,9 +13,7 @@ import javafx.scene.media.Media
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import java.io.ByteArrayInputStream
-import javax.sound.sampled.AudioFormat
-import javax.sound.sampled.AudioSystem
-import javax.sound.sampled.Clip
+import javax.sound.sampled.*
 
 class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging {
     val nowPlayingArea = StackPane()
@@ -63,6 +62,11 @@ class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging 
                     clip = AudioSystem.getClip()
                     clip?.open(convertedStream)
                     clip?.start()
+                    clip?.addLineListener {
+                        if (it.type == LineEvent.Type.STOP) {
+                            playNext()
+                        }
+                    }
                 } else {
                     logger().error(ex.message, ex)
                 }
@@ -70,10 +74,14 @@ class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging 
             nowPlayingArea.children.clear()
             nowPlayingArea.children.add(VBox().apply {
                 track.image?.also {
-                    imageView(Image(ByteArrayInputStream(it))) {
-                        this.fitHeight = 128.0
-                        this.fitWidth = 128.0
-                    }
+                    HBox().apply {
+                        this.alignment = Pos.CENTER
+                        imageView(Image(ByteArrayInputStream(it))) {
+                            this.fitHeight = 128.0
+                            this.fitWidth = 128.0
+                        }
+                    }.attachTo(this)
+
                 }
                 label(track.title) { style = "-fx-text-alignment: center;" }
                 label(track.albumArtist.name) { style = "-fx-font-weight: bold; -fx-text-alignment: center;" }

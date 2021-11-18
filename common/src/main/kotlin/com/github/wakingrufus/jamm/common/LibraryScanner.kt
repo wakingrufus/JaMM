@@ -89,9 +89,7 @@ fun scan(rootDir: File): Library {
 
 sealed class ScanResult {
     class TrackSuccess(val track: Track) : ScanResult()
-    class PlaylistSuccess(val playlist: Playlist) : ScanResult()
     class ScanFailure(val error: String) : ScanResult()
-    class AlbumCover() : ScanResult()
 }
 
 fun buildAlbum(track: Track): Album {

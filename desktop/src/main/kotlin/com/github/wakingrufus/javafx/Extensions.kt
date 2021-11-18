@@ -9,11 +9,16 @@ import javafx.event.ActionEvent
 import javafx.event.EventHandler
 import javafx.scene.*
 import javafx.scene.control.*
+import javafx.scene.control.skin.TableColumnHeader
+import javafx.scene.control.skin.TableHeaderRow
+import javafx.scene.control.skin.TableViewSkinBase
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Pane
 import javafx.util.Callback
+import java.lang.reflect.InvocationTargetException
+
 
 @DslMarker
 annotation class JavaFxDsl
@@ -83,25 +88,20 @@ fun Group.button(text: String, block: Button.() -> Unit): Button {
     }
 }
 
-@JavaFxDsl
 inline fun <reified T : Node> Group.add(block: T.() -> Unit = {}): T {
     return T::class.constructors.first { it.parameters.isEmpty() }.call().apply(block).also {
         this.children.add(it)
     }
 }
 
-@JavaFxDsl
 inline fun <reified T : Node> Pane.add(block: T.() -> Unit = {}): T {
     return T::class.constructors.first { it.parameters.isEmpty() }.call().apply(block).also {
         this.children.add(it)
     }
 }
 
-@JavaFxDsl
 inline fun Pane.imageView(image: Image, block: ImageView.() -> Unit = {}): ImageView {
-    return ImageView(image).apply(block).also {
-        this.children.add(it)
-    }
+    return ImageView(image).apply(block).attachTo(this)
 }
 
 
@@ -190,4 +190,49 @@ inline fun <reified T : Parent> scene(
 
 fun Button.action(action: (ActionEvent) -> Unit) {
     this.onAction = EventHandler(action)
+}
+
+fun Pane.menuBar(menuBar: MenuBar.() -> Unit) {
+    MenuBar().apply(menuBar).attachTo(this)
+}
+
+fun MenuBar.menu(name: String, menu: Menu.() -> Unit): Menu {
+    return Menu(name).apply(menu).also { this.menus.add(it) }
+}
+
+fun Menu.item(name: String, item: MenuItem.() -> Unit): MenuItem {
+    return MenuItem(name).apply(item).also { this.items.add(it) }
+}
+
+fun TabPane.tab(name: String, content: () -> Pane) {
+    this.tabs.add(Tab(name, content.invoke()))
+}
+
+val resizeMethod = TableColumnHeader::class.java.getDeclaredMethod("resizeColumnToFitContent", Int::class.java).apply {
+    this.isAccessible = true
+}
+val headerMethod = TableViewSkinBase::class.java.getDeclaredMethod("getTableHeaderRow").apply {
+    this.isAccessible = true
+}
+val headerCol = TableHeaderRow::class.java.getDeclaredMethod("getColumnHeaderFor", TableColumnBase::class.java).apply {
+    this.isAccessible = true
+}
+
+inline fun <T> TableView<T>.autoResize() {
+    items.addListener(ListChangeListener {
+        for (column in columns) {
+            try {
+                resizeMethod.invoke(
+                    headerCol.invoke(
+                        headerMethod.invoke(this.skin as TableViewSkinBase<*, *, *, *, *>) as TableHeaderRow,
+                        column
+                    ) as TableColumnHeader, -1
+                )
+            } catch (e: IllegalAccessException) {
+                e.printStackTrace()
+            } catch (e: InvocationTargetException) {
+                e.printStackTrace()
+            }
+        }
+    })
 }
