@@ -1,16 +1,15 @@
 plugins {
-    kotlin("multiplatform")
+    kotlin("jvm")
+    id("org.javamodularity.moduleplugin")
 }
 
-kotlin {
-    jvm("jvm")
-    linuxX64("linux")
+dependencies {
+    api("net.jthink:jaudiotagger:3.0.1")
+    implementation(kotlin("reflect"))
+}
 
-    sourceSets {
-        named("commonMain") {
-            dependencies {
-                implementation("net.jthink:jaudiotagger:3.0.1")
-            }
-        }
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    kotlinOptions {
+        jvmTarget = "11"
     }
 }

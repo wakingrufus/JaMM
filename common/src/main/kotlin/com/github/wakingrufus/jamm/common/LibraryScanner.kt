@@ -1,9 +1,8 @@
-package com.github.wakingrufus.jamm
+package com.github.wakingrufus.jamm.common
 
 import org.jaudiotagger.audio.AudioFile
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
-import org.jaudiotagger.tag.Tag
 import org.jaudiotagger.tag.id3.ID3v23Tag
 import java.io.File
 import java.time.LocalDate
@@ -92,6 +91,7 @@ sealed class ScanResult {
     class TrackSuccess(val track: Track) : ScanResult()
     class PlaylistSuccess(val playlist: Playlist) : ScanResult()
     class ScanFailure(val error: String) : ScanResult()
+    class AlbumCover() : ScanResult()
 }
 
 fun buildAlbum(track: Track): Album {

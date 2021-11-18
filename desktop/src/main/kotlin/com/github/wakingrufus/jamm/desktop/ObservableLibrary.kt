@@ -1,11 +1,12 @@
 package com.github.wakingrufus.jamm.desktop
 
-import com.github.wakingrufus.jamm.*
+import com.github.wakingrufus.jamm.common.*
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.collections.ObservableMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jaudiotagger.audio.AudioFileIO
@@ -40,7 +41,7 @@ class ObservableLibrary : Logging {
             buildAlbum(track).also {
                 if (!albumArtists.contains(it.artist)) {
                     albumArtists.add(it.artist)
-                    albumArtists.sortedBy { it.name }
+                    albumArtists.sortBy { it.name }
                 }
                 albumArtistsAlbums.computeIfAbsent(it.artist) { mutableSetOf() }.add(track.albumKey)
             }
@@ -76,26 +77,32 @@ class ObservableLibrary : Logging {
         clear()
         val files = rootDir.flatten()
         logger().info("${files.size} files found")
-        files.asSequence().map {
-            GlobalScope.launch(Dispatchers.Default) {
-                val result = if (it.name.endsWith(".m3u")) {
-                    ScanResult.PlaylistSuccess(parse(rootDir, it))
-                } else if (Extensions.music.contains(it.extension.toLowerCase())) {
-                    readTrack(rootDir, it)
-                } else {
-                    ScanResult.ScanFailure("unsupported file type: ${it.name}")
-                }
-                when (result) {
-                    is ScanResult.ScanFailure -> logger().error(result.error)
-                    is ScanResult.TrackSuccess -> {
-                        importTrack(result.track)
+        GlobalScope.launch(Dispatchers.JavaFx) {
+            files.forEach {
+                withContext(Dispatchers.Default) {
+                    val result = if (it.name.endsWith(".m3u")) {
+                        ScanResult.PlaylistSuccess(parse(rootDir, it))
+                    } else if (Extensions.music.contains(it.extension.toLowerCase())) {
+                        readTrack(rootDir, it)
+                    } else if (it.name.equals("cover.jpg")) {
+                        ScanResult.AlbumCover()
+                    }else {
+                        ScanResult.ScanFailure("unsupported file type: ${it.path}")
                     }
-                    is ScanResult.PlaylistSuccess -> {
-                        importPlaylist(result.playlist)
+                    when (result) {
+                        is ScanResult.ScanFailure -> logger().error(result.error)
+                        is ScanResult.TrackSuccess -> {
+                            withContext(Dispatchers.JavaFx) {
+                                importTrack(result.track)
+                            }
+                        }
+                        is ScanResult.PlaylistSuccess -> {
+                            importPlaylist(result.playlist)
+                        }
+                        else -> {}
                     }
                 }
             }
-        }.count()
-
+        }
     }
 }

@@ -1,7 +1,5 @@
-package com.github.wakingrufus.jamm
+package com.github.wakingrufus.jamm.common
 
-import org.jaudiotagger.audio.AudioFile
-import org.jaudiotagger.tag.FieldKey
 import java.time.LocalDate
 
 class Album(

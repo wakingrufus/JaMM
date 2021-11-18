@@ -1,4 +1,4 @@
-package com.github.wakingrufus.jamm
+package com.github.wakingrufus.jamm.common
 
 class Library (
     val trackCount :Int = 0,

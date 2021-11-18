@@ -1,6 +1,6 @@
 package com.github.wakingrufus.jamm.desktop
 
-import com.github.wakingrufus.jamm.Track
+import com.github.wakingrufus.jamm.common.Track
 import com.github.wakingrufus.javafx.*
 import javafx.collections.ObservableList
 import javafx.scene.image.Image

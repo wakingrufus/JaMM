@@ -1,4 +1,4 @@
-package com.github.wakingrufus.jamm
+package com.github.wakingrufus.jamm.common
 
 class AlbumKey(val id: String?, val albumArtist: String, val albumName: String) {
     override fun equals(other: Any?): Boolean {

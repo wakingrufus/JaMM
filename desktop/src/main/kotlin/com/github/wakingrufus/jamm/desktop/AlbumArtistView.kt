@@ -1,12 +1,8 @@
 package com.github.wakingrufus.jamm.desktop
 
-import com.github.wakingrufus.jamm.Album
-import com.github.wakingrufus.jamm.AlbumArtist
-import com.github.wakingrufus.jamm.Library
-import com.github.wakingrufus.jamm.Track
-import com.github.wakingrufus.javafx.bind
-import com.github.wakingrufus.javafx.onChange
-import com.github.wakingrufus.javafx.toProperty
+import com.github.wakingrufus.jamm.common.Album
+import com.github.wakingrufus.jamm.common.AlbumArtist
+import com.github.wakingrufus.jamm.common.Track
 import com.github.wakingrufus.javafx.*
 import javafx.beans.property.ReadOnlyListWrapper
 import javafx.beans.property.SimpleObjectProperty
@@ -16,7 +12,8 @@ import javafx.scene.image.Image
 import javafx.scene.layout.*
 import java.io.ByteArrayInputStream
 
-class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane() {
+
+class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedAlbumArtist = SimpleObjectProperty<AlbumArtist>().also {
         it.onChange {
@@ -27,6 +24,7 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
     val albums = FXCollections.observableArrayList<Album>()
 
     init {
+
         left<StackPane> {
             listview(library.albumArtists) {
                 this.cellFactory = CustomStringCellFactory { it.name }
@@ -37,13 +35,16 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
             center<TilePane> {
                 this.children.bind(albums) { album ->
                     VBox().apply {
+                        logger().info(album.name)
                         album.coverImage?.also {
                             imageView(Image(ByteArrayInputStream(it))) {
                                 this.fitHeight = 256.0
                                 this.fitWidth = 256.0
                             }
                         }
-                        label(album.name)
+                        label(album.name){
+                            this.style = "-fx-font-family: 'DejaVu Sans', Arial, sans-serif;"
+                        }
                         onMouseClicked = EventHandler {
                             tracks.clear()
                             tracks.setAll(library.albumTracks.get(album.albumKey)?.sortedBy { it.trackNumber })
