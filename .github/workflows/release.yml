@@ -12,9 +12,12 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 11
+      - name: Get Version
+        run: |
+          echo "VERSION=${${{ github.ref }}#"refs/tags/v"}" >> $GITHUB_ENV
       - uses: gradle/gradle-build-action@v2
         with:
-          arguments: jpackage -Pversion=${{ github.ref }}
+          arguments: desktop:jpackage -Pversion=${{ env.VERSION }}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

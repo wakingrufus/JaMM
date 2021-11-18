@@ -15,5 +15,4 @@ module jamm.desktop {
 
     exports com.github.wakingrufus.jamm.desktop;
     exports com.github.wakingrufus.javafx;
-  //  opens com.github.wakingrufus.jamm.desktop;
 }
