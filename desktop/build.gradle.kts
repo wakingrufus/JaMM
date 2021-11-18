@@ -13,7 +13,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("ch.qos.logback:logback-core:1.2.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.4.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx")
     implementation("com.github.trilarion:java-vorbis-support:1.2.1")
     implementation("javax.servlet:javax.servlet-api:4.0.1")
 
