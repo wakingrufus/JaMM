@@ -18,6 +18,7 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Pane
 import javafx.util.Callback
 import java.lang.reflect.InvocationTargetException
+import kotlin.reflect.full.primaryConstructor
 
 
 @DslMarker
@@ -202,6 +203,10 @@ fun MenuBar.menu(name: String, menu: Menu.() -> Unit): Menu {
 
 fun Menu.item(name: String, item: MenuItem.() -> Unit): MenuItem {
     return MenuItem(name).apply(item).also { this.items.add(it) }
+}
+
+fun Menu.checkItem(name: String, item: CheckMenuItem.() -> Unit): CheckMenuItem {
+    return CheckMenuItem(name).apply(item).also { this.items.add(it) }
 }
 
 fun TabPane.tab(name: String, content: () -> Pane) {

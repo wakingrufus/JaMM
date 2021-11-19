@@ -12,17 +12,38 @@ import javafx.scene.layout.VBox
 import javafx.scene.media.Media
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
+import javafx.scene.text.Font
+import javafx.scene.text.FontPosture
+import javafx.scene.text.FontWeight
 import java.io.ByteArrayInputStream
-import javax.sound.sampled.*
+import javax.sound.sampled.AudioFormat
+import javax.sound.sampled.AudioSystem
+import javax.sound.sampled.Clip
+import javax.sound.sampled.LineEvent
 
-class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging {
+class MediaPlayerView(val queue: ObservableList<Track>, val library: ObservableLibrary) : BorderPane(), Logging {
     val nowPlayingArea = StackPane()
     var javaFxMediaPlayer: MediaPlayer? = null
     var clip: Clip? = null
 
-    fun play() {
-        if (javaFxMediaPlayer == null) {
+    fun play(): Boolean {
+        return if (javaFxMediaPlayer == null && clip == null) {
             playNext()
+            true
+        } else {
+            return if (javaFxMediaPlayer?.status == MediaPlayer.Status.PLAYING) {
+                javaFxMediaPlayer?.pause()
+                false
+            } else if (javaFxMediaPlayer?.status == MediaPlayer.Status.PAUSED) {
+                javaFxMediaPlayer?.play()
+                true
+            } else if (clip?.isRunning == true) {
+                clip?.stop()
+                false
+            } else {
+                clip?.start()
+                true
+            }
         }
     }
 
@@ -35,6 +56,9 @@ class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging 
     }
 
     fun playNext() {
+        if (queue.isEmpty() && getPreference(Preference.CONTINUOUS_PLAY, "false").toBoolean()) {
+            queue.add(library.tracks.random())
+        }
         queue.firstOrNull()?.also { track ->
             try {
                 val uri = track.file.toURI().toASCIIString()
@@ -47,6 +71,7 @@ class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging 
                 javaFxMediaPlayer?.onEndOfMedia = Runnable {
                     playNext()
                 }
+                clip = null
             } catch (ex: MediaException) {
                 if (ex.type == MediaException.Type.MEDIA_UNSUPPORTED) {
                     logger().info("unsupported file: ${track.file.name} falling back to Java SPI")
@@ -67,6 +92,7 @@ class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging 
                             playNext()
                         }
                     }
+                    javaFxMediaPlayer = null
                 } else {
                     logger().error(ex.message, ex)
                 }
@@ -77,15 +103,25 @@ class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging 
                     HBox().apply {
                         this.alignment = Pos.CENTER
                         imageView(Image(ByteArrayInputStream(it))) {
-                            this.fitHeight = 128.0
-                            this.fitWidth = 128.0
+                            this.fitHeight = 256.0
+                            this.fitWidth = 256.0
                         }
                     }.attachTo(this)
 
                 }
-                label(track.title) { style = "-fx-text-alignment: center;" }
-                label(track.albumArtist.name) { style = "-fx-font-weight: bold; -fx-text-alignment: center;" }
-                label(track.album) { style = "-fx-font-style: italic; -fx-text-alignment: center;" }
+                alignment = Pos.CENTER
+                label(track.title) {
+                    font = Font.font(14.0)
+                    alignment = Pos.CENTER
+                }
+                label(track.albumArtist.name) {
+                    style = "-fx-font-weight: bold;"
+                    alignment = Pos.CENTER
+                }
+                label(track.album) {
+                    style = "-fx-font-style: italic;"
+                    alignment = Pos.CENTER
+                }
             })
             queue.remove(track)
         }
@@ -94,14 +130,24 @@ class MediaPlayerView(val queue: ObservableList<Track>) : BorderPane(), Logging 
     init {
         this.center = nowPlayingArea
         bottom<HBox> {
-            button("Stop") {
+            button("⏹️ Stop") {
                 action {
                     stop()
                 }
             }
-            button("Play") {
+            button("▶ Play️") {
                 action {
-                    play()
+                    if (play()) {
+                        this.text = "⏸ Pause️️"
+                    } else {
+                        this.text = "▶ Play️"
+                    }
+                }
+            }
+            button("⏭️ Next") {
+                action {
+                    stop()
+                    playNext()
                 }
             }
         }

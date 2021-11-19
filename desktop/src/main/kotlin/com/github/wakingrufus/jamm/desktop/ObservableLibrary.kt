@@ -48,9 +48,12 @@ class ObservableLibrary : Logging {
             }
         }
         if (album.coverImage == null) {
-            Paths.get(track.path).toFile().parentFile.resolve("cover.jpg").let {
-                album.coverImage = if (it.exists()) it.readBytes()
-                else track.image
+            if(track.file.parentFile.resolve("cover.jpg").exists()) {
+                album.coverImage = track.file.parentFile.resolve("cover.jpg").readBytes()
+            }else if(track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.size > 0){
+                album.coverImage = track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
+            }else {
+                album.coverImage = track.image
             }
         }
         if (track.image == null && album.coverImage != null) {

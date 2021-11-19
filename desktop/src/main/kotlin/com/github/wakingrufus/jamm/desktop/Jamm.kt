@@ -1,43 +1,42 @@
 package com.github.wakingrufus.jamm.desktop
 
-import com.github.wakingrufus.jamm.common.AlbumKey
 import com.github.wakingrufus.jamm.common.Track
 import com.github.wakingrufus.javafx.*
 import javafx.application.Application
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.event.EventHandler
+import javafx.geometry.Pos
 import javafx.geometry.Side
 import javafx.scene.control.TabPane
 import javafx.scene.control.TextInputDialog
-import javafx.scene.layout.BorderPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
+import javafx.scene.paint.Paint
+import javafx.scene.text.Font
 import javafx.stage.Stage
 import jfxtras.styles.jmetro.JMetro
 import jfxtras.styles.jmetro.JMetroStyleClass
 import jfxtras.styles.jmetro.Style
 import java.io.File
 import java.nio.file.Paths
-import java.util.prefs.Preferences
 
 
 class Jamm : Application(), Logging {
 
     val observableLibrary: ObservableLibrary = ObservableLibrary()
     val libraryPath: SimpleStringProperty = SimpleStringProperty(
-        Preferences.userNodeForPackage(Jamm::class.java)
-        .get("library.path", File(System.getProperty("user.home")).resolve("Music").path
-    ))
+        getPreference(Preference.LIBRARY_PATH, File(System.getProperty("user.home")).resolve("Music").path)
+    )
 
     override fun start(primaryStage: Stage) {
         logger().info("starting")
         val playQueue = FXCollections.observableArrayList<Track>()
         //    var library = Library()
-        val mediaPlayerView = MediaPlayerView(playQueue)
+        val mediaPlayerView = MediaPlayerView(playQueue, observableLibrary)
         val mediaPlayerController = object : MediaPlayerController {
             override fun play(tracks: List<Track>) {
                 logger().info("adding ${tracks.size} to queue")
+                mediaPlayerView.stop()
                 playQueue.clear()
                 playQueue.setAll(tracks)
                 mediaPlayerView.play()
@@ -46,7 +45,6 @@ class Jamm : Application(), Logging {
             override fun queue(tracks: List<Track>) {
                 logger().info("adding ${tracks.size} to queue")
                 playQueue.addAll(tracks)
-                mediaPlayerView.play()
             }
         }
 
@@ -57,9 +55,8 @@ class Jamm : Application(), Logging {
                     menu("Settings") {
                         item("Music Library...") {
                             this.onAction = EventHandler {
-                                val pref = Preferences.userNodeForPackage(Jamm::class.java)
-                                val current = pref.get(
-                                    "library.path",
+                                val current = getPreference(
+                                    Preference.LIBRARY_PATH,
                                     File(System.getProperty("user.home")).resolve("Music").path
                                 )
                                 val dialog: TextInputDialog = TextInputDialog(current).apply {
@@ -70,14 +67,27 @@ class Jamm : Application(), Logging {
                                 path.ifPresent {
                                     libraryPath.set(it)
                                     scan()
-                                    pref.put("library.path", it)
+                                    putPreference(Preference.LIBRARY_PATH, it)
                                 }
                             }
+                        }
+                        checkItem("Continuous Play") {
+                            this.onAction = EventHandler {
+                                putPreference(Preference.CONTINUOUS_PLAY, this.isSelected.toString())
+                            }
+                            this.selectedProperty().set(getPreference(Preference.CONTINUOUS_PLAY, "false").toBoolean())
+                        }
+                        checkItem("Dark Mode") {
+                            this.onAction = EventHandler {
+                                putPreference(Preference.DARK_MODE, this.isSelected.toString())
+                            }
+                            this.selectedProperty().set(getPreference(Preference.DARK_MODE, "true").toBoolean())
                         }
                     }
                 }
             }
             center<TabPane> {
+                tabClosingPolicy = TabPane.TabClosingPolicy.UNAVAILABLE
                 tab("Playlists") {
                     PlaylistView(observableLibrary)
                 }
@@ -91,22 +101,39 @@ class Jamm : Application(), Logging {
             }
             right<BorderPane> {
                 top<BorderPane> {
+                    top<VBox> {
+                        alignment = Pos.CENTER
+                        label("Now Playing") {
+                            font = Font.font(24.0)
+                        }
+                    }
                     this.center = mediaPlayerView
                 }
                 center<VBox> {
-                    label("Play Queue")
+                    alignment = Pos.TOP_CENTER
+                    label("Play Queue") {
+                        alignment = Pos.CENTER
+                        this.font = Font.font(24.0)
+                    }
                     add<VBox> {
                         this.spacing = 10.0
                         this.children.bind(playQueue) { track ->
                             VBox().apply {
-                                style = "-fx-border-color: white; -fx-border-style: solid; -fx-border-width: 1px;"
-                                label(track.title) { style = "-fx-text-alignment: center;" }
+                                this.border = Border(
+                                    BorderStroke(
+                                        Paint.valueOf("white"), BorderStrokeStyle.SOLID, CornerRadii.EMPTY,
+                                        BorderWidths(1.0)
+                                    )
+                                )
+                                label(track.title)
                                 this.children.add(HBox().apply {
                                     label(track.albumArtist.name) {
-                                        style = "-fx-font-weight: bold; -fx-text-alignment: center;"
+                                        style = "-fx-font-weight: bold;"
                                     }
                                     label(" - ")
-                                    label(track.album) { style = "-fx-font-style: italic; -fx-text-alignment: center;" }
+                                    label(track.album) {
+                                        style = "-fx-font-style: italic;"
+                                    }
                                 })
 
                             }
@@ -115,7 +142,8 @@ class Jamm : Application(), Logging {
                 }
             }
         }
-        val jMetro = JMetro(Style.DARK)
+        val style = if (getPreference(Preference.DARK_MODE, "true").toBoolean()) Style.DARK else Style.LIGHT
+        val jMetro = JMetro(style)
         jMetro.scene = primaryStage.scene
         primaryStage.show()
         scan()
