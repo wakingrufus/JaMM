@@ -134,10 +134,11 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         albumArtist = albumArtist,
         trackNumber = tag.getFirst(FieldKey.TRACK).toIntOrNull(),
         albumKey = albumKey,
+        discNumber = tag.getFirst(FieldKey.DISC_NO).toIntOrNull(),
         file = file,
         releaseDate = tag.getFirst(FieldKey.ALBUM_YEAR)?.toIntOrNull()
             ?.let { LocalDate.of(it, 1, 1) },
-        path= file.toRelativeString(rootFile),
+        path = file.toRelativeString(rootFile),
         image = if (tag.artworkList.isNotEmpty()) {
             tag.firstArtwork?.binaryData
         } else null

@@ -7,12 +7,12 @@ import com.github.wakingrufus.javafx.*
 import javafx.beans.property.ReadOnlyListWrapper
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
-import javafx.collections.ListChangeListener
 import javafx.event.EventHandler
+import javafx.scene.control.SelectionMode
+import javafx.scene.control.TableView
 import javafx.scene.image.Image
 import javafx.scene.layout.*
 import java.io.ByteArrayInputStream
-import java.lang.reflect.InvocationTargetException
 
 
 class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
@@ -37,37 +37,51 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
             center<TilePane> {
                 this.children.bind(albums) { album ->
                     VBox().apply {
-                        logger().info(album.name)
+                        maxWidth = 192.0
                         album.coverImage?.also {
                             imageView(Image(ByteArrayInputStream(it))) {
-                                this.fitHeight = 256.0
-                                this.fitWidth = 256.0
+                                this.fitHeight = 192.0
+                                this.fitWidth = 192.0
                             }
                         }
                         label(album.name) {
+                            maxWidth = 192.0
+                            this.isWrapText = true
                             this.style = "-fx-font-family: 'DejaVu Sans', Arial, sans-serif;"
                         }
                         onMouseClicked = EventHandler {
                             tracks.clear()
-                            tracks.setAll(library.albumTracks.get(album.albumKey)?.sortedBy { it.trackNumber })
+                            tracks.setAll(library.albumTracks.get(album.albumKey)
+                                ?.sortedBy { it.trackNumber }
+                                ?.sortedBy { it.discNumber })
                         }
                     }
                 }
             }
             bottom<BorderPane> {
+                var tv : TableView<Track>? = null
                 center<StackPane> {
-                    tableView(ReadOnlyListWrapper(tracks)) {
-                        column<Track, String>("#") { it.value.trackNumber.toString().toProperty() }
+                    tv =  tableView(ReadOnlyListWrapper(tracks)) {
+                        column<Track, Int>("Disc") { it.value.discNumber.toProperty() }
+                        column<Track, Int>("Track #") { it.value.trackNumber.toProperty() }
                         column<Track, String>("Title") { it.value.title.toProperty() }
                         column<Track, String>("Album") { it.value.album.toProperty() }
                         column<Track, String>("Album Artist") { it.value.albumArtist.name.toProperty() }
                         autoResize()
+                        this.selectionModel.selectionModeProperty().set(SelectionMode.MULTIPLE)
                     }
                 }
                 bottom<HBox> {
-                    button("Play") {
+                    button("Play Album") {
                         action {
                             mediaPlayer.play(tracks)
+                        }
+                    }
+                    button("Play Selected") {
+                        action {
+                            tv?.selectionModel?.selectedItems?.run {
+                                mediaPlayer.play(this)
+                            }
                         }
                     }
                 }

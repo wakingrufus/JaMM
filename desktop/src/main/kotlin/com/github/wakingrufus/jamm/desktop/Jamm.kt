@@ -8,6 +8,7 @@ import javafx.collections.FXCollections
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.geometry.Side
+import javafx.scene.control.ScrollPane
 import javafx.scene.control.TabPane
 import javafx.scene.control.TextInputDialog
 import javafx.scene.layout.*
@@ -97,6 +98,9 @@ class Jamm : Application(), Logging {
                 tab("Albums") {
                     AlbumsView(observableLibrary, mediaPlayerController)
                 }
+                tab("Tracks") {
+                    TracksView(observableLibrary, mediaPlayerController)
+                }
                 this.side = Side.LEFT
             }
             right<BorderPane> {
@@ -115,30 +119,32 @@ class Jamm : Application(), Logging {
                         alignment = Pos.CENTER
                         this.font = Font.font(24.0)
                     }
-                    add<VBox> {
-                        this.spacing = 10.0
-                        this.children.bind(playQueue) { track ->
-                            VBox().apply {
-                                this.border = Border(
-                                    BorderStroke(
-                                        Paint.valueOf("white"), BorderStrokeStyle.SOLID, CornerRadii.EMPTY,
-                                        BorderWidths(1.0)
+                    ScrollPane().apply {
+                        this.content = VBox().apply {
+                            this.spacing = 10.0
+                            this.children.bind(playQueue) { track ->
+                                VBox().apply {
+                                    this.border = Border(
+                                        BorderStroke(
+                                            Paint.valueOf("black"), BorderStrokeStyle.SOLID, CornerRadii.EMPTY,
+                                            BorderWidths(1.0)
+                                        )
                                     )
-                                )
-                                label(track.title)
-                                this.children.add(HBox().apply {
-                                    label(track.albumArtist.name) {
-                                        style = "-fx-font-weight: bold;"
-                                    }
-                                    label(" - ")
-                                    label(track.album) {
-                                        style = "-fx-font-style: italic;"
-                                    }
-                                })
+                                    label(track.title)
+                                    this.children.add(HBox().apply {
+                                        label(track.albumArtist.name) {
+                                            style = "-fx-font-weight: bold;"
+                                        }
+                                        label(" - ")
+                                        label(track.album) {
+                                            style = "-fx-font-style: italic;"
+                                        }
+                                    })
 
+                                }
                             }
                         }
-                    }
+                    }.attachTo(this)
                 }
             }
         }

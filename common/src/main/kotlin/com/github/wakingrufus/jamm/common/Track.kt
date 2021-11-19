@@ -8,6 +8,7 @@ data class Track(
     val album: String,
     val albumArtist: AlbumArtist,
     val trackNumber: Int?,
+    val discNumber: Int?,
     val albumKey: AlbumKey,
     val file: File,
     val releaseDate: LocalDate? = null,
