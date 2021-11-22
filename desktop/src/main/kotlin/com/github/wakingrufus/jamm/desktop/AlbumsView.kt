@@ -23,14 +23,14 @@ class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
         top<HBox> {
             button("Play Random Album") {
                 this.action {
-                    library.albumList.random().also {
-                        mediaPlayer.play(library.albumTracks.get(it)?.sortedBy { it.trackNumber }.orEmpty())
+                    library.albums.keys.random().also {
+                        mediaPlayer.play(library.albumTracks[it]?.sortedBy { it.trackNumber }.orEmpty())
                     }
                 }
             }
         }
         left<StackPane> {
-            listview(library.albumList) {
+            listview(library.albums.observableKeys().sorted(Comparator.comparing { it.albumName })) {
                 this.cellFactory = CustomStringCellFactory { it.albumName + " - " + it.albumArtist }
                 bindSelected(selectedAlbum)
             }

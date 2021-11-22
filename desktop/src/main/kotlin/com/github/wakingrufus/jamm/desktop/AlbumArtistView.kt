@@ -20,7 +20,7 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
     val selectedAlbumArtist = SimpleObjectProperty<AlbumArtist>().also {
         it.onChange {
             albums.clear()
-            albums.setAll(library.albumArtistsAlbums[it]?.map { library.albums[it] })
+            albums.setAll(library.albumArtistsAlbums[it])
         }
     }
     val albums = FXCollections.observableArrayList<Album>()
@@ -28,7 +28,7 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
     init {
 
         left<StackPane> {
-            listview(library.albumArtists) {
+            listview(library.albumArtistsAlbums.observableKeys().sorted(Comparator.comparing { it.name })) {
                 this.cellFactory = CustomStringCellFactory { it.name }
                 bindSelected(selectedAlbumArtist)
             }
@@ -59,9 +59,9 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
                 }
             }
             bottom<BorderPane> {
-                var tv : TableView<Track>? = null
+                var tv: TableView<Track>? = null
                 center<StackPane> {
-                    tv =  tableView(ReadOnlyListWrapper(tracks)) {
+                    tv = tableView(ReadOnlyListWrapper(tracks)) {
                         column<Track, Int>("Disc") { it.value.discNumber.toProperty() }
                         column<Track, Int>("Track #") { it.value.trackNumber.toProperty() }
                         column<Track, String>("Title") { it.value.title.toProperty() }
@@ -77,10 +77,22 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
                             mediaPlayer.play(tracks)
                         }
                     }
+                    button("Enqueue Album") {
+                        action {
+                            mediaPlayer.queue(tracks)
+                        }
+                    }
                     button("Play Selected") {
                         action {
                             tv?.selectionModel?.selectedItems?.run {
                                 mediaPlayer.play(this)
+                            }
+                        }
+                    }
+                    button("Enqueue Selected") {
+                        action {
+                            tv?.selectionModel?.selectedItems?.run {
+                                mediaPlayer.queue(this)
                             }
                         }
                     }

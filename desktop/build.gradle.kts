@@ -15,7 +15,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("ch.qos.logback:logback-core:1.2.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.4.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.5.2")
     implementation("com.github.trilarion:java-vorbis-support:1.2.1")
     implementation("javax.servlet:javax.servlet-api:4.0.1")
     implementation("org.jfxtras:jmetro:11.6.15"){
@@ -33,6 +33,14 @@ dependencies {
         implementation("org.openjfx:javafx-graphics:${javafx.version}:mac")
     }
     testImplementation("org.assertj:assertj-core:3.11.1")
+//    testImplementation(libs.junit.jupiter.api)
+//    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+}
+
+tasks.withType(Test::class.java){
+    useJUnitPlatform()
 }
 
 java {

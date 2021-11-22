@@ -39,7 +39,7 @@ class Jamm : Application(), Logging {
                 logger().info("adding ${tracks.size} to queue")
                 mediaPlayerView.stop()
                 playQueue.clear()
-                playQueue.setAll(tracks)
+                playQueue.addAll(tracks)
                 mediaPlayerView.play()
             }
 

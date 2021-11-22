@@ -1,6 +1,7 @@
 package com.github.wakingrufus.jamm.desktop
 
 import com.github.wakingrufus.jamm.common.*
+import com.github.wakingrufus.javafx.observableKeys
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.collections.ObservableMap
@@ -18,12 +19,10 @@ import java.util.logging.Level
 class ObservableLibrary : Logging {
     val playlists: ObservableList<Playlist> = FXCollections.observableArrayList()
     val albums: ObservableMap<AlbumKey, Album> = FXCollections.observableHashMap()
-    val albumList: ObservableList<AlbumKey> = FXCollections.observableArrayList()
     val trackPaths: ObservableMap<String, Track> = FXCollections.observableHashMap()
     val tracks: ObservableList<Track> = FXCollections.observableArrayList()
-    val albumArtistsAlbums: ObservableMap<AlbumArtist, MutableSet<AlbumKey>> = FXCollections.observableHashMap()
+    val albumArtistsAlbums: ObservableMap<AlbumArtist, MutableSet<Album>> = FXCollections.observableHashMap()
     val albumTracks: ObservableMap<AlbumKey, ObservableList<Track>> = FXCollections.observableHashMap()
-    val albumArtists: ObservableList<AlbumArtist> = FXCollections.observableArrayList()
 
     fun clear() {
 
@@ -38,13 +37,7 @@ class ObservableLibrary : Logging {
         trackPaths[track.path] = track
         val album = albums.computeIfAbsent(track.albumKey) { albumKey ->
             buildAlbum(track).also {
-                if (!albumArtists.contains(it.artist)) {
-                    albumArtists.add(it.artist)
-                    albumArtists.sortBy { it.name }
-                }
-                albumArtistsAlbums.computeIfAbsent(it.artist) { mutableSetOf() }.add(albumKey)
-                albumList.add(albumKey)
-                albumList.sortBy { it.albumName }
+                albumArtistsAlbums.computeIfAbsent(it.artist) { mutableSetOf() }.add(it)
             }
         }
         if (album.coverImage == null) {
