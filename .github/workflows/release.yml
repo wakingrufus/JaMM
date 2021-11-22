@@ -17,7 +17,7 @@ jobs:
           echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
       - uses: gradle/gradle-build-action@v2
         with:
-          arguments: desktop:jpackage -Pversion=${{ env.VERSION }}
+          arguments: desktop:jpackage desktop:distZip -Pversion=${{ env.VERSION }}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -28,7 +28,7 @@ jobs:
           release_name: ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Get Name of Artifact
+      - name: Get Name of Deb
         run: |
             ARTIFACT_PATHNAME=$(ls ./desktop/build/jpackage/*.deb | head -n 1)
             echo "ARTIFACT_PATHNAME=$(ls ./desktop/build/jpackage/*.deb | head -n 1)" >> $GITHUB_ENV
@@ -41,3 +41,16 @@ jobs:
           asset_path: ${{ env.ARTIFACT_PATHNAME }}
           asset_name: ${{ env.ARTIFACT_NAME }}
           asset_content_type: application/vnd.debian.binary-package
+      - name: Get Name of zip
+        run: |
+          ZIP_PATHNAME=$(ls ./desktop/build/distributions/*.zip | head -n 1)
+          echo "ZIP_PATHNAME=$(ls ./desktop/build/distributions/*.zip | head -n 1)" >> $GITHUB_ENV
+          echo "ZIP_NAME=$(basename $(ls ./desktop/build/distributions/*.zip | head -n 1))" >> $GITHUB_ENV
+      - uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.ZIP_PATHNAME }}
+          asset_name: ${{ env.ZIP_NAME }}
+          asset_content_type: application/zip

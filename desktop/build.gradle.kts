@@ -18,12 +18,20 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.4.3")
     implementation("com.github.trilarion:java-vorbis-support:1.2.1")
     implementation("javax.servlet:javax.servlet-api:4.0.1")
-    implementation("org.jfxtras:jmetro:11.6.15")
+    implementation("org.jfxtras:jmetro:11.6.15"){
+        exclude(group = "org.openjfx")
+    }
 
-    runtimeOnly("org.openjfx:javafx-graphics:${javafx.version}:win")
-    runtimeOnly("org.openjfx:javafx-graphics:${javafx.version}:linux")
-    runtimeOnly("org.openjfx:javafx-graphics:${javafx.version}:mac")
-
+    if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
+        implementation("org.openjfx:javafx-base:${javafx.version}:win")
+        implementation("org.openjfx:javafx-graphics:${javafx.version}:win")
+    } else if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_UNIX)) {
+        implementation("org.openjfx:javafx-base:${javafx.version}:linux")
+        implementation("org.openjfx:javafx-graphics:${javafx.version}:linux")
+    } else if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_MAC)) {
+        implementation("org.openjfx:javafx-base:${javafx.version}:mac")
+        implementation("org.openjfx:javafx-graphics:${javafx.version}:mac")
+    }
     testImplementation("org.assertj:assertj-core:3.11.1")
 }
 
