@@ -1,7 +1,6 @@
 package com.github.wakingrufus.jamm.desktop
 
 import com.github.wakingrufus.jamm.common.*
-import com.github.wakingrufus.javafx.observableKeys
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.collections.ObservableMap
@@ -13,7 +12,6 @@ import kotlinx.coroutines.withContext
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.id3.ID3v23Tag
 import java.io.File
-import java.nio.file.Paths
 import java.util.logging.Level
 
 class ObservableLibrary : Logging {
@@ -25,7 +23,12 @@ class ObservableLibrary : Logging {
     val albumTracks: ObservableMap<AlbumKey, ObservableList<Track>> = FXCollections.observableHashMap()
 
     fun clear() {
-
+        playlists.clear()
+        albums.clear()
+        trackPaths.clear()
+        tracks.clear()
+        albumArtistsAlbums.clear()
+        albumTracks.clear()
     }
 
     fun importLibrary(library: Library) {
@@ -41,12 +44,12 @@ class ObservableLibrary : Logging {
             }
         }
         if (album.coverImage == null) {
-            if(track.file.parentFile.resolve("cover.jpg").exists()) {
-                album.coverImage = track.file.parentFile.resolve("cover.jpg").readBytes()
-            }else if(track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.size > 0){
-                album.coverImage = track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
-            }else {
+            if (track.image != null) {
                 album.coverImage = track.image
+            } else if (track.file.parentFile.resolve("cover.jpg").exists()) {
+                album.coverImage = track.file.parentFile.resolve("cover.jpg").readBytes()
+            } else if (track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.size > 0) {
+                album.coverImage = track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
             }
         }
         if (track.image == null && album.coverImage != null) {

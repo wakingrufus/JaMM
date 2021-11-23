@@ -14,7 +14,6 @@ import javafx.scene.image.Image
 import javafx.scene.layout.*
 import java.io.ByteArrayInputStream
 
-
 class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedAlbumArtist = SimpleObjectProperty<AlbumArtist>().also {
