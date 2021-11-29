@@ -101,6 +101,9 @@ class Jamm : Application(), Logging {
                 tab("Tracks") {
                     TracksView(observableLibrary, mediaPlayerController)
                 }
+                tab("Tags") {
+                    TagView(observableLibrary, mediaPlayerController)
+                }
                 this.side = Side.LEFT
             }
             right<BorderPane> {

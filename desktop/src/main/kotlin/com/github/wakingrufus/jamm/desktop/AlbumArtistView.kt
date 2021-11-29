@@ -17,9 +17,9 @@ import java.io.ByteArrayInputStream
 class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedAlbumArtist = SimpleObjectProperty<AlbumArtist>().also {
-        it.onChange {
+        it.onChange { selectedAlbumArtist ->
             albums.clear()
-            albums.setAll(library.albumArtistsAlbums[it])
+            albums.setAll(library.albums.observableValues().filtered { it.artist == selectedAlbumArtist})
         }
     }
     val albums = FXCollections.observableArrayList<Album>()
@@ -27,7 +27,8 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
     init {
 
         left<StackPane> {
-            listview(library.albumArtistsAlbums.observableKeys().sorted(Comparator.comparing { it.name })) {
+         //   listview(library.albumArtistsAlbums.observableKeys().sorted(Comparator.comparing { it.name })) {
+            listview(library.tracks.grouped { it.albumArtist }.sorted(Comparator.comparing { it.name })) {
                 this.cellFactory = CustomStringCellFactory { it.name }
                 bindSelected(selectedAlbumArtist)
             }
@@ -50,52 +51,15 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
                         }
                         onMouseClicked = EventHandler {
                             tracks.clear()
-                            tracks.setAll(library.albumTracks.get(album.albumKey)
+                            tracks.setAll(library.tracks.filtered { it.albumKey == album.albumKey}
                                 ?.sortedBy { it.trackNumber }
                                 ?.sortedBy { it.discNumber })
                         }
                     }
                 }
             }
-            bottom<BorderPane> {
-                var tv: TableView<Track>? = null
-                center<StackPane> {
-                    tv = tableView(ReadOnlyListWrapper(tracks)) {
-                        column<Track, Int>("Disc") { it.value.discNumber.toProperty() }
-                        column<Track, Int>("Track #") { it.value.trackNumber.toProperty() }
-                        column<Track, String>("Title") { it.value.title.toProperty() }
-                        column<Track, String>("Album") { it.value.album.toProperty() }
-                        column<Track, String>("Album Artist") { it.value.albumArtist.name.toProperty() }
-                        autoResize()
-                        this.selectionModel.selectionModeProperty().set(SelectionMode.MULTIPLE)
-                    }
-                }
-                bottom<HBox> {
-                    button("Play Album") {
-                        action {
-                            mediaPlayer.play(tracks)
-                        }
-                    }
-                    button("Enqueue Album") {
-                        action {
-                            mediaPlayer.queue(tracks)
-                        }
-                    }
-                    button("Play Selected") {
-                        action {
-                            tv?.selectionModel?.selectedItems?.run {
-                                mediaPlayer.play(this)
-                            }
-                        }
-                    }
-                    button("Enqueue Selected") {
-                        action {
-                            tv?.selectionModel?.selectedItems?.run {
-                                mediaPlayer.queue(this)
-                            }
-                        }
-                    }
-                }
+            bottom<StackPane> {
+                trackTable(tracks,library, mediaPlayer)
             }
         }
     }

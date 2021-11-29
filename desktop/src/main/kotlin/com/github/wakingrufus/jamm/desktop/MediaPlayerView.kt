@@ -13,8 +13,10 @@ import javafx.scene.media.Media
 import javafx.scene.media.MediaException
 import javafx.scene.media.MediaPlayer
 import javafx.scene.text.Font
-import javafx.scene.text.FontPosture
-import javafx.scene.text.FontWeight
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -56,9 +58,6 @@ class MediaPlayerView(val queue: ObservableList<Track>, val library: ObservableL
     }
 
     fun playNext() {
-        if (queue.isEmpty() && getPreference(Preference.CONTINUOUS_PLAY, "false").toBoolean()) {
-            queue.add(library.tracks.random())
-        }
         queue.firstOrNull()?.also { track ->
             try {
                 val uri = track.file.toURI().toASCIIString()
@@ -123,7 +122,12 @@ class MediaPlayerView(val queue: ObservableList<Track>, val library: ObservableL
                     alignment = Pos.CENTER
                 }
             })
-            queue.remove(track)
+            GlobalScope.launch(Dispatchers.JavaFx) {
+                queue.remove(track)
+                if (queue.isEmpty() && getPreference(Preference.CONTINUOUS_PLAY, "false").toBoolean()) {
+                    queue.add(library.tracks.random())
+                }
+            }
         }
     }
 

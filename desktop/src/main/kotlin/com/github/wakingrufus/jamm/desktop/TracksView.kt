@@ -5,9 +5,7 @@ import com.github.wakingrufus.javafx.*
 import javafx.beans.property.ReadOnlyListWrapper
 import javafx.collections.FXCollections
 import javafx.event.EventHandler
-import javafx.scene.control.SelectionMode
-import javafx.scene.control.TableView
-import javafx.scene.control.TextField
+import javafx.scene.control.*
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
@@ -20,7 +18,6 @@ class TracksView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
     val tracks = FXCollections.observableArrayList<Track>()
 
     init {
-        var tv: TableView<Track>? = null
         top<StackPane> {
             TextField().apply {
                 this.onAction = EventHandler { query ->
@@ -41,28 +38,7 @@ class TracksView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
         }
 
         center<StackPane> {
-            tv = tableView(ReadOnlyListWrapper(tracks)) {
-                column<Track, String>("Title") {
-                    it.value?.title?.toProperty() ?: it.value.path.toProperty()
-                }
-                column<Track, String>("Album Artist") { it.value?.albumArtist?.name.toProperty() }
-                column<Track, String>("Album") { it.value?.album.toProperty() }
-
-                column<Track, Int>("#") {
-                    it.value.trackNumber.toProperty()
-                }
-                autoResize()
-                this.selectionModel.selectionModeProperty().set(SelectionMode.MULTIPLE)
-            }
-        }
-        bottom<HBox> {
-            button("Play Selected") {
-                action {
-                    tv?.selectionModel?.selectedItems?.run {
-                        mediaPlayer.play(this)
-                    }
-                }
-            }
+            trackTable(tracks,library,mediaPlayer)
         }
     }
 }

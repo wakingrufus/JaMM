@@ -1,8 +1,10 @@
 package com.github.wakingrufus.javafx
 
 import javafx.beans.WeakListener
+import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
+import javafx.collections.ObservableSet
 import java.lang.ref.WeakReference
 
 
@@ -72,4 +74,32 @@ class ListConversionListener<SourceType, TargetType>(targetList: MutableList<Tar
         }
         return false
     }
+}
+
+private class ListGroupingBinder<I, O>(val list: ObservableList<O>, val op: (I) -> O) : ListChangeListener<I> {
+
+    override fun onChanged(change: ListChangeListener.Change<out I>) {
+        while (change.next()) {
+            if (change.wasRemoved()) {
+                change.removed.map(op).forEach { group ->
+                    if(change.list.none { op(it) == group }){
+                        list.remove(group)
+                    }
+                }
+            }
+            if (change.wasAdded()) {
+                change.addedSubList.map(op).forEach { group ->
+                    if(list.none { it == group }){
+                        list.add(group)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun <E, F> ObservableList<E>.grouped(op: (E) -> F): ObservableList<F> {
+    val list = FXCollections.observableList(this.map(op).toSet().toMutableList())
+    this.addListener(ListGroupingBinder(list, op))
+    return FXCollections.unmodifiableObservableList(list)
 }

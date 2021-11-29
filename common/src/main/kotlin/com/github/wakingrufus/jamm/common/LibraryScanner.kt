@@ -6,8 +6,8 @@ import org.jaudiotagger.tag.FieldKey
 import org.jaudiotagger.tag.id3.ID3v23Tag
 import java.io.File
 import java.time.LocalDate
+import java.util.*
 import java.util.logging.Level
-
 
 object Extensions {
     val music = listOf("ogg", "mp3")
@@ -39,7 +39,7 @@ fun scan(rootDir: File): Library {
         filesToProcess.forEach { file ->
             if (file.name.endsWith(".m3u")) {
                 playlistsMutableList.add(parse(rootDir, file))
-            } else if (Extensions.music.contains(file.extension.toLowerCase())) {
+            } else if (Extensions.music.contains(file.extension.lowercase(Locale.getDefault()))) {
                 AudioFileIO.logger.level = Level.WARNING
                 ID3v23Tag.logger.level = Level.WARNING
                 val audioFile = AudioFileIO.read(file)
@@ -114,6 +114,8 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         AlbumArtist("*UNKNOWN*")
     }
 
+    val tags = tag.getFirst(FieldKey.TAGS).split(",").filter { it.isNotBlank() }
+
     val albumName = if (tag.hasField(FieldKey.ALBUM)) tag.getFirst(FieldKey.ALBUM).let {
         it.ifBlank { "*UNKNOWN*" }
     } else "*UNKNOWN*"
@@ -139,6 +141,7 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         releaseDate = tag.getFirst(FieldKey.ALBUM_YEAR)?.toIntOrNull()
             ?.let { LocalDate.of(it, 1, 1) },
         path = file.toRelativeString(rootFile),
+        tags = tags.toSet(),
         image = if (tag.artworkList.isNotEmpty()) {
             tag.firstArtwork?.binaryData
         } else null

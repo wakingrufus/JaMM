@@ -10,6 +10,7 @@ import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jaudiotagger.audio.AudioFileIO
+import org.jaudiotagger.tag.FieldKey
 import org.jaudiotagger.tag.id3.ID3v23Tag
 import java.io.File
 import java.util.logging.Level
@@ -19,29 +20,34 @@ class ObservableLibrary : Logging {
     val albums: ObservableMap<AlbumKey, Album> = FXCollections.observableHashMap()
     val trackPaths: ObservableMap<String, Track> = FXCollections.observableHashMap()
     val tracks: ObservableList<Track> = FXCollections.observableArrayList()
-    val albumArtistsAlbums: ObservableMap<AlbumArtist, MutableSet<Album>> = FXCollections.observableHashMap()
-    val albumTracks: ObservableMap<AlbumKey, ObservableList<Track>> = FXCollections.observableHashMap()
+    val tags: ObservableMap<String, MutableSet<Track>> = FXCollections.observableHashMap()
 
     fun clear() {
         playlists.clear()
         albums.clear()
         trackPaths.clear()
         tracks.clear()
-        albumArtistsAlbums.clear()
-        albumTracks.clear()
     }
 
     fun importLibrary(library: Library) {
 
     }
 
+    fun addTag(track: Track, tags: Set<String>) {
+        val audioFile = AudioFileIO.read(track.file)
+        audioFile.tag.setField(FieldKey.TAGS, tags.joinToString(","))
+        AudioFileIO.write(audioFile)
+        importTrack(track.copy(tags = track.tags + tags))
+    }
+
     fun importTrack(track: Track) {
         tracks.add(track)
         trackPaths[track.path] = track
+        track.tags.forEach {
+            tags.computeIfAbsent(it) { FXCollections.observableSet() }.add(track)
+        }
         val album = albums.computeIfAbsent(track.albumKey) { albumKey ->
-            buildAlbum(track).also {
-                albumArtistsAlbums.computeIfAbsent(it.artist) { mutableSetOf() }.add(it)
-            }
+            buildAlbum(track)
         }
         if (album.coverImage == null) {
             if (track.image != null) {
@@ -55,9 +61,6 @@ class ObservableLibrary : Logging {
         if (track.image == null && album.coverImage != null) {
             track.image = album.coverImage
         }
-        albumTracks.computeIfAbsent(track.albumKey) {
-            FXCollections.observableArrayList()
-        }.add(track)
     }
 
     fun importPlaylist(playlist: Playlist) {
@@ -88,17 +91,24 @@ class ObservableLibrary : Logging {
         GlobalScope.launch(Dispatchers.Default) {
             val newTrackScans = files
                 .filter { Extensions.music.contains(it.extension.toLowerCase()) }
-                .map { readTrack(rootDir, it) }
-            withContext(Dispatchers.JavaFx) {
-                newTrackScans.forEach {
-                    when (it) {
-                        is ScanResult.ScanFailure -> logger().error(it.error)
-                        is ScanResult.TrackSuccess -> {
-                            importTrack(it.track)
+                .chunked(100)
+                .map {
+                    it.map { readTrack(rootDir, it) }.also {
+                        withContext(Dispatchers.JavaFx) {
+                            it.forEach {
+                                when (it) {
+                                    is ScanResult.ScanFailure -> logger().error(it.error)
+                                    is ScanResult.TrackSuccess -> {
+                                        importTrack(it.track)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            }
+                .flatten()
+            logger().info("scanned ${newTrackScans.size} tracks")
         }
     }
 }
+

@@ -145,6 +145,15 @@ inline fun <reified T> Pane.tableView(
     return TableView(items).attachTo(this, config)
 }
 
+fun ContextMenu.menuItem(name: String, onAction: EventHandler<ActionEvent>){
+    items.add(MenuItem(name).apply {
+        setOnAction (onAction)
+    })
+}
+fun Control.contextMenu(builder: ContextMenu.() -> Unit){
+this.contextMenu = ContextMenu().apply(builder)
+
+}
 inline fun <reified T : Node> BorderPane.right(block: T.() -> Unit = {}): T {
     return T::class.constructors.first { it.parameters.isEmpty() }.call().apply(block).also {
         this.right = it
