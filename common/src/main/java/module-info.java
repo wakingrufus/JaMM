@@ -5,4 +5,5 @@ module jamm.common {
     requires kotlin.stdlib.jdk8;
     requires kotlin.reflect;
     requires java.logging;
+    requires org.slf4j;
 }

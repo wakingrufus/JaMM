@@ -13,3 +13,7 @@ fun <T : Any> getClassForLogging(javaClass: Class<T>): Class<*> {
         it.kotlin.companionObject?.java == javaClass
     } ?: javaClass
 }
+
+fun globalLogger() : Logger{
+    return getLogger(Jamm::class.java)
+}

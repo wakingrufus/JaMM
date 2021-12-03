@@ -18,9 +18,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.5.2")
     implementation("com.github.trilarion:java-vorbis-support:1.2.1")
     implementation("javax.servlet:javax.servlet-api:4.0.1")
-    implementation("org.jfxtras:jmetro:11.6.15"){
-        exclude(group = "org.openjfx")
-    }
 
     if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
         implementation("org.openjfx:javafx-base:${javafx.version}:win")

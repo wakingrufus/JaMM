@@ -18,7 +18,6 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Pane
 import javafx.util.Callback
 import java.lang.reflect.InvocationTargetException
-import kotlin.reflect.full.primaryConstructor
 
 
 @DslMarker
@@ -33,10 +32,20 @@ inline fun <T : Node> opcr(parent: Pane, node: T, op: T.() -> Unit = {}) = node.
     op(this)
 }
 
+inline fun <T : Node> opcr(parent: Group, node: T, op: T.() -> Unit = {}) = node.apply {
+    parent.children.add(this)
+    op(this)
+}
+
 /**
  * Attaches the node to the pane and invokes the node operation.
  */
 inline fun <T : Node> T.attachTo(parent: Pane, op: T.() -> Unit = {}): T = opcr(parent, this, op)
+
+/**
+ * Attaches the node to the pane and invokes the node operation.
+ */
+inline fun <T : Node> T.attachTo(parent: Group, op: T.() -> Unit = {}): T = opcr(parent, this, op)
 
 /**
  * Attaches the node to the pane and invokes the node operation.
@@ -45,11 +54,14 @@ inline fun <T : Node> T.attachTo(parent: Pane, op: T.() -> Unit = {}): T = opcr(
 inline fun <T : Node> T.attachTo(
     parent: Pane,
     after: T.() -> Unit,
-    before: (T) -> Unit
-) = this.also(before).attachTo(parent, after)
+    before: T.() -> Unit
+) = this.apply(before).attachTo(parent, after)
 
-fun <T> Node.bind(list: ObservableList<T>, block: (change: ListChangeListener.Change<out T>) -> Unit) {
-    list.addListener(ListChangeListener { block(it) })
+fun <T, N : Pane> N.bind(property: Property<T>, block: N.(value: T?) -> Unit) {
+    property.onChange {
+        this.children.clear()
+        this.block(it)
+    }
 }
 
 fun <T> TableView<out T>.bindSelected(model: ObjectProperty<in T>) {
@@ -60,7 +72,7 @@ fun <T> TableView<out T>.bindSelected(model: ObjectProperty<in T>) {
 
 fun <T> Pane.listview(values: ObservableList<T>? = null, op: ListView<T>.() -> Unit = {}) =
     ListView<T>().attachTo(this, op) {
-        it.items = values
+        items = values
     }
 
 fun Pane.buttonBar(block: ButtonBar.() -> Unit): ButtonBar {
@@ -77,6 +89,10 @@ fun Pane.button(text: String, block: Button.() -> Unit): Button {
     return Button(text).attachTo(this, block)
 }
 
+fun Pane.button(image: ImageView, block: Button.() -> Unit): Button {
+    return Button(null, image).attachTo(this, block)
+}
+
 fun Group.buttonBar(block: ButtonBar.() -> Unit): ButtonBar {
     return ButtonBar().apply(block).also {
         this.children.add(it)
@@ -90,15 +106,20 @@ fun Group.button(text: String, block: Button.() -> Unit): Button {
 }
 
 inline fun <reified T : Node> Group.add(block: T.() -> Unit = {}): T {
-    return T::class.constructors.first { it.parameters.isEmpty() }.call().apply(block).also {
-        this.children.add(it)
-    }
+    return T::class.constructors.first { it.parameters.isEmpty() }.call().attachTo(this, block)
 }
 
 inline fun <reified T : Node> Pane.add(block: T.() -> Unit = {}): T {
-    return T::class.constructors.first { it.parameters.isEmpty() }.call().apply(block).also {
-        this.children.add(it)
+    return T::class.constructors.first { it.parameters.isEmpty() }.call().attachTo(this, block) {
+
     }
+}
+
+fun Pane.autoComplete(
+    entries: ObservableList<String>,
+    block: AutoCompleteTextField.() -> Unit = {}
+): AutoCompleteTextField {
+    return AutoCompleteTextField(entries).attachTo(this, block)
 }
 
 inline fun Pane.imageView(image: Image, block: ImageView.() -> Unit = {}): ImageView {
@@ -113,7 +134,10 @@ fun <S, T> TableView<S>.column(
     title: String,
     valueProvider: (TableColumn.CellDataFeatures<S, T>) -> ObservableValue<T>
 ): TableColumn<S, T> {
-    val column = TableColumn<S, T>(title)
+    val column = TableColumn<S, T>(title).apply {
+        //TODO smart language detection
+        this.style = "-fx-font-family: 'Noto Sans CJK JP';"
+    }
     column.cellValueFactory = Callback { valueProvider(it) }
     addColumnInternal(column)
     return column
@@ -123,6 +147,10 @@ fun <S, T> TableView<S>.column(
 fun <S> TableView<S>.addColumnInternal(column: TableColumn<S, *>, index: Int? = null) {
     val columnTarget = properties["tornadofx.columnTarget"] as? ObservableList<TableColumn<S, *>> ?: columns
     if (index == null) columnTarget.add(column) else columnTarget.add(index, column)
+}
+
+fun Pane.label(config: Label.() -> Unit): Label {
+    return this.add(config)
 }
 
 fun Pane.label(text: String): Label {
@@ -145,15 +173,26 @@ inline fun <reified T> Pane.tableView(
     return TableView(items).attachTo(this, config)
 }
 
-fun ContextMenu.menuItem(name: String, onAction: EventHandler<ActionEvent>){
+fun ContextMenu.actionItem(name: String, onAction: EventHandler<ActionEvent>) {
     items.add(MenuItem(name).apply {
-        setOnAction (onAction)
+        setOnAction(onAction)
     })
 }
-fun Control.contextMenu(builder: ContextMenu.() -> Unit){
-this.contextMenu = ContextMenu().apply(builder)
 
+fun Menu.actionItem(name: String, onAction: EventHandler<ActionEvent>) {
+    items.add(MenuItem(name).apply {
+        setOnAction(onAction)
+    })
 }
+
+fun ContextMenu.subMenu(name: String, block: Menu.() -> Unit): Menu {
+    return Menu(name).apply(block).also { items.add(it) }
+}
+
+fun Control.contextMenu(builder: ContextMenu.() -> Unit) {
+    this.contextMenu = ContextMenu().apply(builder)
+}
+
 inline fun <reified T : Node> BorderPane.right(block: T.() -> Unit = {}): T {
     return T::class.constructors.first { it.parameters.isEmpty() }.call().apply(block).also {
         this.right = it

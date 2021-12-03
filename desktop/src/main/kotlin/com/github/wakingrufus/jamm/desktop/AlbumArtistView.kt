@@ -47,7 +47,7 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
                         label(album.name) {
                             maxWidth = 192.0
                             this.isWrapText = true
-                            this.style = "-fx-font-family: 'DejaVu Sans', Arial, sans-serif;"
+                            this.style = "-fx-font-family: 'Noto Sans CJK JP';"
                         }
                         onMouseClicked = EventHandler {
                             tracks.clear()

@@ -15,12 +15,11 @@ import org.jaudiotagger.tag.id3.ID3v23Tag
 import java.io.File
 import java.util.logging.Level
 
-class ObservableLibrary : Logging {
+class ObservableLibrary(val rootDir: File) : Logging {
     val playlists: ObservableList<Playlist> = FXCollections.observableArrayList()
     val albums: ObservableMap<AlbumKey, Album> = FXCollections.observableHashMap()
     val trackPaths: ObservableMap<String, Track> = FXCollections.observableHashMap()
     val tracks: ObservableList<Track> = FXCollections.observableArrayList()
-    val tags: ObservableMap<String, MutableSet<Track>> = FXCollections.observableHashMap()
 
     fun clear() {
         playlists.clear()
@@ -33,19 +32,31 @@ class ObservableLibrary : Logging {
 
     }
 
-    fun addTag(track: Track, tags: Set<String>) {
+    fun exportTagPlaylist(tag: String) {
+        val m3uFile = rootDir.resolve("tag-$tag.m3u")
+        if (m3uFile.exists()) {
+            m3uFile.delete()
+        }
+        m3uFile.createNewFile()
+        m3uFile.writeText("#EXTM3U\n" +
+                tracks.filter { it.tags.contains(tag) }.joinToString("\n") {
+                    it.file.relativeTo(rootDir).path
+                })
+    }
+
+    fun setTags(track: Track, newTags: Set<String>) {
+        GlobalScope.launch(Dispatchers.JavaFx) {
+            track.tags.clear()
+            track.tags.addAll(newTags)
+        }
         val audioFile = AudioFileIO.read(track.file)
-        audioFile.tag.setField(FieldKey.TAGS, tags.joinToString(","))
+        audioFile.tag.setField(FieldKey.TAGS, newTags.joinToString(","))
         AudioFileIO.write(audioFile)
-        importTrack(track.copy(tags = track.tags + tags))
     }
 
     fun importTrack(track: Track) {
         tracks.add(track)
         trackPaths[track.path] = track
-        track.tags.forEach {
-            tags.computeIfAbsent(it) { FXCollections.observableSet() }.add(track)
-        }
         val album = albums.computeIfAbsent(track.albumKey) { albumKey ->
             buildAlbum(track)
         }
@@ -74,7 +85,7 @@ class ObservableLibrary : Logging {
         }.getOrElse { throwable -> ScanResult.ScanFailure(throwable.message ?: "error scanning file ${file.name}") }
     }
 
-    fun scan(rootDir: File) {
+    fun scan() {
         AudioFileIO.logger.level = Level.WARNING
         ID3v23Tag.logger.level = Level.WARNING
         clear()

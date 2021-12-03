@@ -13,19 +13,30 @@ class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerContro
         it.onChange { selected ->
             tracks.clear()
             selected?.run {
-                this@TagView.tracks.setAll(library.tags.get(this))
+                this@TagView.tracks.setAll(library.tracks.filtered { it.tags.contains(this) })
             }
         }
     }
 
     init {
         left<StackPane> {
-            listview(library.tags.observableKeys()) {
+            listview(library.tracks.flatMappedUnique { it.tags }.sorted()) {
                 bindSelected(selectedTag)
+                contextMenu {
+                    actionItem("Export") {
+                        selectionModel?.selectedItems?.run {
+                            this.forEach {
+                                library.exportTagPlaylist(it)
+                            }
+                        }
+                    }
+                }
             }
         }
         center<StackPane> {
-            trackTable(tracks, library, mediaPlayer)
+            trackTable(tracks, library, mediaPlayer, listOf("Remove From Tag" to {
+                library.setTags(it, it.tags.minus(selectedTag.get()))
+            }))
         }
     }
 }

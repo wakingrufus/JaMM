@@ -26,26 +26,6 @@ private class MapValueBinder<K, V>(val list: ObservableList<V>) : MapChangeListe
     }
 }
 
-private class ListMappingBinder<I, O>(val list: ObservableList<O>, val op: (I) -> O) : ListChangeListener<I> {
-
-    override fun onChanged(change: ListChangeListener.Change<out I>) {
-        while (change.next()) {
-            if (change.wasRemoved()) {
-                list.removeAll(change.removed.map(op))
-            }
-            if (change.wasAdded()) {
-                list.addAll(change.addedSubList.map(op))
-            }
-        }
-    }
-}
-
-fun <E, F> ObservableList<E>.mapped(op: (E) -> F): ObservableList<F> {
-    val list = FXCollections.observableArrayList(this.map(op))
-    this.addListener(ListMappingBinder(list, op))
-    return FXCollections.unmodifiableObservableList(list)
-}
-
 fun <K, V> ObservableMap<K, V>.observableKeys(): ObservableList<K> {
     val list = FXCollections.observableArrayList(this.keys)
     this.addListener(MapKeyBinder(list))

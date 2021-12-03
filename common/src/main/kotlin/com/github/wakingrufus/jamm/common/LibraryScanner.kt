@@ -4,8 +4,9 @@ import org.jaudiotagger.audio.AudioFile
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import org.jaudiotagger.tag.id3.ID3v23Tag
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
-import java.time.LocalDate
 import java.util.*
 import java.util.logging.Level
 
@@ -20,6 +21,8 @@ fun File.flatten(): List<File> = listFiles().flatMap {
         listOf(it)
     }
 }
+
+val scannerLogger: Logger = LoggerFactory.getLogger("scanner")
 
 fun scan(rootDir: File): Library {
     if (rootDir.exists()) {
@@ -130,6 +133,14 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         albumArtist = albumArtist.name,
         albumName = albumName
     )
+    val originalYear = tag.getFirst(FieldKey.ORIGINAL_YEAR)
+    val originalDate = tag.getFirst(FieldKey.ORIGINALRELEASEDATE)
+    val year = tag.getFirst(FieldKey.YEAR)
+    val parsedDates = listOf(originalDate, originalYear, year).map { it.parseDate() }
+    parsedDates.filterIsInstance<DateParseFail>().forEach {
+        scannerLogger.warn("invalid Date ${it.originalValue} in file ${file.name}")
+    }
+    val date = parsedDates.filterIsInstance<DateParseSuccess>().firstOrNull()?.date
     val track = Track(
         title = tag.getFirst(FieldKey.TITLE),
         album = albumName,
@@ -138,10 +149,9 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         albumKey = albumKey,
         discNumber = tag.getFirst(FieldKey.DISC_NO).toIntOrNull(),
         file = file,
-        releaseDate = tag.getFirst(FieldKey.ALBUM_YEAR)?.toIntOrNull()
-            ?.let { LocalDate.of(it, 1, 1) },
+        releaseDate = date,
         path = file.toRelativeString(rootFile),
-        tags = tags.toSet(),
+        tags = tags.toMutableSet(),
         image = if (tag.artworkList.isNotEmpty()) {
             tag.firstArtwork?.binaryData
         } else null

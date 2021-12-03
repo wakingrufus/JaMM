@@ -9,6 +9,8 @@ class CustomStringCellFactory<T>(val value: (T) -> String) : Callback<ListView<T
         return object : ListCell<T>() {
             override fun updateItem(person: T?, empty: Boolean) {
                 super.updateItem(person, empty)
+                //TODO smart language detection
+                this.style = "-fx-font-family: 'Noto Sans CJK JP';"
                 text = if (empty || person == null) {
                     null
                 } else {

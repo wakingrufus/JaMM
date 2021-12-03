@@ -14,5 +14,5 @@ data class Track(
     val releaseDate: LocalDate? = null,
     val path: String,
     var image: ByteArray? = null,
-    val tags: Set<String>
+    val tags: MutableSet<String>
 )
