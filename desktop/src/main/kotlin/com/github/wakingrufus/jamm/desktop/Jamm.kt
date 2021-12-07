@@ -77,7 +77,7 @@ class Jamm : Application(), Logging {
                         NowPlayingView(observableLibrary, mediaPlayerController, playQueue)
                     }
                     tab("Playlists") {
-                        PlaylistView(observableLibrary)
+                        PlaylistView(observableLibrary, mediaPlayerController)
                     }
                     tab("Album Artists") {
                         AlbumArtistView(observableLibrary, mediaPlayerController)

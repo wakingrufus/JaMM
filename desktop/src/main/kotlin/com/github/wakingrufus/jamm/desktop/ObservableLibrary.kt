@@ -22,10 +22,12 @@ class ObservableLibrary(val rootDir: File) : Logging {
     val tracks: ObservableList<Track> = FXCollections.observableArrayList()
 
     fun clear() {
-        playlists.clear()
-        albums.clear()
-        trackPaths.clear()
-        tracks.clear()
+        GlobalScope.launch(Dispatchers.JavaFx) {
+            playlists.clear()
+            albums.clear()
+            trackPaths.clear()
+            tracks.clear()
+        }
     }
 
     fun importLibrary(library: Library) {
@@ -102,7 +104,7 @@ class ObservableLibrary(val rootDir: File) : Logging {
         GlobalScope.launch(Dispatchers.Default) {
             val newTrackScans = files
                 .filter { Extensions.music.contains(it.extension.toLowerCase()) }
-                .chunked(100)
+                .chunked(500)
                 .map {
                     it.map { readTrack(rootDir, it) }.also {
                         withContext(Dispatchers.JavaFx) {

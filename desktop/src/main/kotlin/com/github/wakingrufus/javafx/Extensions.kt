@@ -15,6 +15,7 @@ import javafx.scene.control.skin.TableViewSkinBase
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.BorderPane
+import javafx.scene.layout.GridPane
 import javafx.scene.layout.Pane
 import javafx.util.Callback
 import java.lang.reflect.InvocationTargetException
@@ -112,6 +113,12 @@ inline fun <reified T : Node> Group.add(block: T.() -> Unit = {}): T {
 inline fun <reified T : Node> Pane.add(block: T.() -> Unit = {}): T {
     return T::class.constructors.first { it.parameters.isEmpty() }.call().attachTo(this, block) {
 
+    }
+}
+
+inline fun <reified T : Node> GridPane.add(column: Int, row: Int, block: T.() -> Unit = {}): T {
+    return T::class.constructors.first { it.parameters.isEmpty() }.call().apply(block).also {
+        this.add(it, column, row)
     }
 }
 

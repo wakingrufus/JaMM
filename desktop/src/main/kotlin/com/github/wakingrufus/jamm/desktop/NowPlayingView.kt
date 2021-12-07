@@ -7,16 +7,26 @@ import javafx.collections.ObservableList
 import javafx.event.EventHandler
 import javafx.geometry.Insets
 import javafx.geometry.Pos
+import javafx.scene.control.Label
+import javafx.scene.control.ProgressBar
 import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class NowPlayingView(
     val library: ObservableLibrary,
-    mediaPlayerController: MediaPlayerController,
+    val mediaPlayerController: MediaPlayerController,
     val queue: ObservableList<Track>,
 ) : BorderPane(), Logging {
     init {
@@ -80,6 +90,24 @@ class NowPlayingView(
 
                 }
             }
+            bottom<BorderPane> {
+                val cur = left<Label> {
+                    this.maxWidth(120.0)
+                }
+                val bar = center<ProgressBar> {
+                    this.maxWidth = Double.MAX_VALUE
+                }
+                val total = right<Label> {
+                    this.maxWidth(120.0)
+                }
+                mediaPlayerController.getProgressProperty().onChange {
+                    GlobalScope.launch(Dispatchers.JavaFx) {
+                        bar.progress = it
+                        cur.text = formatTime(mediaPlayerController.getCurrentPosition())
+                        total.text = formatTime(mediaPlayerController.getTotalDuration())
+                    }
+                }
+            }
         }
 
         right<VBox> {
@@ -106,5 +134,13 @@ class NowPlayingView(
                 }
             }
         }
+    }
+
+    fun formatTime(duration: Duration): String {
+        val seconds: Long = duration.toLong(TimeUnit.SECONDS)
+        val HH = seconds / 3600
+        val MM = seconds % 3600 / 60
+        val SS = seconds % 60
+        return String.format("%02d:%02d:%02d", HH, MM, SS)
     }
 }
