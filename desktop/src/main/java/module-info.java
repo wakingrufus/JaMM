@@ -13,6 +13,11 @@ module jamm.desktop {
     requires kotlinx.coroutines.javafx;
     requires java.logging;
     requires java.prefs;
+    requires fuel;
+    requires result;
+    requires fuel.json;
+    requires javafx.web;
+    requires org.json;
 
     exports com.github.wakingrufus.jamm.desktop;
     exports com.github.wakingrufus.javafx;

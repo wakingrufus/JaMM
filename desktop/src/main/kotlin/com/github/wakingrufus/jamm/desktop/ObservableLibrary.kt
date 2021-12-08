@@ -34,6 +34,23 @@ class ObservableLibrary(val rootDir: File) : Logging {
 
     }
 
+    fun getAlbumArt(album: AlbumKey): ByteArray? {
+        return tracks.filter { it.albumKey == album }.map { getTrackArt(it) }.firstOrNull()
+    }
+
+    fun getTrackArt(track: Track): ByteArray? {
+        val audioFile = AudioFileIO.read(track.file)
+        return if (audioFile.tag.artworkList.isNotEmpty()) {
+            audioFile.tag.firstArtwork?.binaryData
+        } else if (track.file.parentFile.resolve("cover.jpg").exists()) {
+            track.file.parentFile.resolve("cover.jpg").readBytes()
+        } else if (track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.isNotEmpty()) {
+            track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
+        } else {
+            null
+        }
+    }
+
     fun exportTagPlaylist(tag: String) {
         val m3uFile = rootDir.resolve("tag-$tag.m3u")
         if (m3uFile.exists()) {
@@ -62,18 +79,18 @@ class ObservableLibrary(val rootDir: File) : Logging {
         val album = albums.computeIfAbsent(track.albumKey) { albumKey ->
             buildAlbum(track)
         }
-        if (album.coverImage == null) {
-            if (track.image != null) {
-                album.coverImage = track.image
-            } else if (track.file.parentFile.resolve("cover.jpg").exists()) {
-                album.coverImage = track.file.parentFile.resolve("cover.jpg").readBytes()
-            } else if (track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.size > 0) {
-                album.coverImage = track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
-            }
-        }
-        if (track.image == null && album.coverImage != null) {
-            track.image = album.coverImage
-        }
+//        if (album.coverImage == null) {
+//            if (track.image != null) {
+//                album.coverImage = track.image
+//            } else if (track.file.parentFile.resolve("cover.jpg").exists()) {
+//                album.coverImage = track.file.parentFile.resolve("cover.jpg").readBytes()
+//            } else if (track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.size > 0) {
+//                album.coverImage = track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
+//            }
+//        }
+//        if (track.image == null && album.coverImage != null) {
+//            track.image = album.coverImage
+//        }
     }
 
     fun importPlaylist(playlist: Playlist) {

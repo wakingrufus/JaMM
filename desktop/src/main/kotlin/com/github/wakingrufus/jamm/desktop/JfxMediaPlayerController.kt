@@ -1,10 +1,8 @@
 package com.github.wakingrufus.jamm.desktop
 
 import com.github.wakingrufus.jamm.common.Track
-import javafx.beans.property.DoubleProperty
-import javafx.beans.property.Property
-import javafx.beans.property.SimpleDoubleProperty
-import javafx.beans.property.SimpleObjectProperty
+import com.github.wakingrufus.jamm.lastfm.LastFmClient
+import javafx.beans.property.*
 import javafx.collections.ObservableList
 import javafx.scene.media.Media
 import javafx.scene.media.MediaException
@@ -14,6 +12,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
+import java.time.Instant
 import javax.sound.sampled.*
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -23,11 +22,13 @@ import kotlin.time.toDuration
 @OptIn(ExperimentalTime::class)
 class JfxMediaPlayerController(
     val queue: ObservableList<Track>,
-    val library: ObservableLibrary
+    val library: ObservableLibrary,
+    val lastFm: Property<LastFmClient>
 ) :
     MediaPlayerController, Logging {
     val nowPlayingProperty = SimpleObjectProperty<Track>()
     val progressProperty = SimpleDoubleProperty()
+    val scrobbledProperty = SimpleBooleanProperty()
     override fun getProgress(): Double {
         return javaFxMediaPlayer?.let { it.currentTime.toSeconds().div(it.totalDuration.toSeconds()) }
             ?: clip?.let { it.microsecondPosition.toDouble().div(it.microsecondLength.toDouble()) } ?: 0.0
@@ -39,7 +40,9 @@ class JfxMediaPlayerController(
     }
 
     override fun getTotalDuration(): Duration {
-        val mp3Duration = javaFxMediaPlayer?.let { it.totalDuration.toSeconds().let { if(it.isNaN()) null else it.toDuration(DurationUnit.SECONDS) }}
+        val mp3Duration = javaFxMediaPlayer?.let {
+            it.totalDuration.toSeconds().let { if (it.isNaN()) null else it.toDuration(DurationUnit.SECONDS) }
+        }
         val oggDuration = clip?.microsecondLength?.toDuration(DurationUnit.MICROSECONDS)
         return mp3Duration ?: oggDuration ?: Duration.ZERO
     }
@@ -135,6 +138,10 @@ class JfxMediaPlayerController(
                     logger().error(ex.message, ex)
                 }
             }
+            scrobbledProperty.set(false)
+            GlobalScope.launch(Dispatchers.Default) {
+                lastFm.value?.nowPlaying(track)
+            }
             GlobalScope.launch(Dispatchers.JavaFx) {
                 nowPlayingProperty.set(track)
                 updateProgress(track)
@@ -149,6 +156,14 @@ class JfxMediaPlayerController(
     fun updateProgress(track: Track) {
         GlobalScope.launch(Dispatchers.Default) {
             if ((clip != null || javaFxMediaPlayer != null) && nowPlayingProperty.get() == track) {
+                if (!scrobbledProperty.get() && (getCurrentPosition().toInt(DurationUnit.SECONDS) > 30
+                            || (getTotalDuration().toInt(DurationUnit.SECONDS) < 30 && getProgress() > 0.5))
+                ) {
+                    scrobbledProperty.set(true)
+                    lastFm.value?.scrobble(
+                        Instant.now().minusSeconds(getCurrentPosition().toLong(DurationUnit.SECONDS)), track
+                    )
+                }
                 progressProperty.set(getProgress())
                 delay(100.toDuration(DurationUnit.MILLISECONDS))
                 updateProgress(track)

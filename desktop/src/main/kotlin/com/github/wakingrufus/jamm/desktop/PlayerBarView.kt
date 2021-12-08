@@ -11,7 +11,6 @@ import javafx.scene.layout.VBox
 import javafx.scene.text.Font
 import java.io.ByteArrayInputStream
 
-
 class PlayerBarView(
     val library: ObservableLibrary,
     mediaPlayerController: MediaPlayerController
@@ -39,7 +38,7 @@ class PlayerBarView(
             add<HBox> {
                 this.padding = Insets(1.0, 16.0, 1.0, 1.0)
                 track?.also {
-                    it.image?.also { imageBytes ->
+                    library.getTrackArt(track)?.also { imageBytes ->
                         HBox().apply {
                             this.padding = Insets(1.0, 16.0, 1.0, 1.0)
                             this.alignment = Pos.CENTER
@@ -55,7 +54,7 @@ class PlayerBarView(
                         alignment = Pos.CENTER_LEFT
                         padding = Insets(1.0, 10.0, 1.0, 1.0)
                         label(it.title) {
-                          //  font = Font.font("Noto Sans CJK JP", 24.0)
+                            //  font = Font.font("Noto Sans CJK JP", 24.0)
                             style = "-fx-font-size: 24; -fx-font-family: 'Noto Sans CJK JP';"
                             alignment = Pos.CENTER_LEFT
                         }

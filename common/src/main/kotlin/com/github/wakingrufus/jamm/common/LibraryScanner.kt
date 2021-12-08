@@ -1,14 +1,10 @@
 package com.github.wakingrufus.jamm.common
 
 import org.jaudiotagger.audio.AudioFile
-import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
-import org.jaudiotagger.tag.id3.ID3v23Tag
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.*
-import java.util.logging.Level
 
 object Extensions {
     val music = listOf("ogg", "mp3")
@@ -23,72 +19,6 @@ fun File.flatten(): List<File> = listFiles().flatMap {
 }
 
 val scannerLogger: Logger = LoggerFactory.getLogger("scanner")
-
-fun scan(rootDir: File): Library {
-    if (rootDir.exists()) {
-        val playlists = rootDir
-            .listFiles { _: File?, s: String -> s.contains(".m3u") }
-            ?.map { parse(rootDir, it) }
-            ?: emptyList()
-        val filesToProcess = rootDir.flatten()
-        val playlistsMutableList: MutableList<Playlist> = mutableListOf()
-        val albumArtistsAlbums: MutableMap<AlbumArtist, MutableSet<AlbumKey>> = mutableMapOf()
-        val albums: MutableMap<AlbumKey, Album> = mutableMapOf()
-        val albumTracks: MutableMap<AlbumKey, MutableList<Track>> = mutableMapOf()
-        val errors: MutableList<String> = mutableListOf()
-        val warnings: MutableList<String> = mutableListOf()
-        val tracks: MutableList<Track> = mutableListOf()
-        val trackPaths: MutableMap<String, Track> = mutableMapOf()
-        filesToProcess.forEach { file ->
-            if (file.name.endsWith(".m3u")) {
-                playlistsMutableList.add(parse(rootDir, file))
-            } else if (Extensions.music.contains(file.extension.lowercase(Locale.getDefault()))) {
-                AudioFileIO.logger.level = Level.WARNING
-                ID3v23Tag.logger.level = Level.WARNING
-                val audioFile = AudioFileIO.read(file)
-                val tr = buildTrack(rootDir, file, audioFile)
-                when (tr) {
-                    is ScanResult.ScanFailure -> errors.add(tr.error)
-                    is ScanResult.TrackSuccess -> {
-                        val track = tr.track
-                        tracks.add(track)
-                        trackPaths[file.toRelativeString(rootDir)] = track
-                        val album = albums.computeIfAbsent(track.albumKey) {
-                            buildAlbum(track).also {
-                                albumArtistsAlbums.computeIfAbsent(it.artist) { mutableSetOf() }.add(track.albumKey)
-                            }
-                        }
-                        if (album.coverImage == null) {
-                            file.parentFile.resolve("cover.jpg").let {
-                                album.coverImage = if (it.exists()) it.readBytes()
-                                else track.image
-                            }
-                        }
-                        if (track.image == null && album.coverImage != null) {
-                            track.image = album.coverImage
-                        }
-                        albumTracks.computeIfAbsent(track.albumKey) {
-                            mutableListOf()
-                        }.add(track)
-                    }
-                }
-            }
-        }
-        return Library(
-            playlists = playlists,
-            albumArtists = albumArtistsAlbums,
-            errors = errors,
-            warnings = warnings,
-            trackCount = filesToProcess.size,
-            albums = albums,
-            tracks = tracks,
-            trackPaths = trackPaths,
-            albumTracks = albumTracks
-        )
-    } else {
-        return Library()
-    }
-}
 
 sealed class ScanResult {
     class TrackSuccess(val track: Track) : ScanResult()
@@ -152,9 +82,10 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         releaseDate = date,
         path = file.toRelativeString(rootFile),
         tags = tags.toMutableSet(),
-        image = if (tag.artworkList.isNotEmpty()) {
-            tag.firstArtwork?.binaryData
-        } else null
+//        image = if (tag.artworkList.isNotEmpty()) {
+//            tag.firstArtwork?.binaryData
+//        } else null,
+        musicBrainzTrackId = tag.getFirst(FieldKey.MUSICBRAINZ_TRACK_ID)
     )
     return ScanResult.TrackSuccess(track)
 }

@@ -12,6 +12,7 @@ Other formats may be supported but are as yet untested.
 - [Playlists](#playlists)
 - [Tags](#tags)
 - [Tracks](#tracks)
+- Last.FM Scrobbling
 - Continuous Play Mode (plays random tracks when queue is empty)
 
 ### Now Playing
@@ -45,7 +46,6 @@ You can also export tags to an m3u file for compatibility with other players.
 - Editing playlists
 - more filters in track and album view
 - filters for album artist view
-- Last.fm scrobbling
 - More Audio Formats
 - Installers for more architectures
 - More options for continuous play mode

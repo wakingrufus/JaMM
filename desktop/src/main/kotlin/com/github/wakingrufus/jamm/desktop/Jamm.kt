@@ -1,8 +1,13 @@
 package com.github.wakingrufus.jamm.desktop
 
 import com.github.wakingrufus.jamm.common.Track
+import com.github.wakingrufus.jamm.lastfm.LastFmClient
+import com.github.wakingrufus.jamm.lastfm.getSession
+import com.github.wakingrufus.jamm.lastfm.getToken
+import com.github.wakingrufus.jamm.lastfm.requestAuthUrl
 import com.github.wakingrufus.javafx.*
 import javafx.application.Application
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.event.EventHandler
@@ -10,7 +15,11 @@ import javafx.geometry.Side
 import javafx.scene.control.TabPane
 import javafx.scene.control.TextInputDialog
 import javafx.scene.layout.BorderPane
+import javafx.scene.layout.HBox
+import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
+import javafx.scene.web.WebView
+import javafx.stage.Popup
 import javafx.stage.Stage
 import java.io.File
 import java.nio.file.Paths
@@ -21,7 +30,7 @@ class Jamm : Application(), Logging {
     val libraryPath: SimpleStringProperty = SimpleStringProperty(
         getPreference(Preference.LIBRARY_PATH, File(System.getProperty("user.home")).resolve("Music").path)
     )
-
+    val lastFmClientProperty = SimpleObjectProperty<LastFmClient>()
     override fun start(primaryStage: Stage) {
         logger().info("starting")
         val f = Paths.get(libraryPath.value).toFile()
@@ -31,28 +40,60 @@ class Jamm : Application(), Logging {
             val observableLibrary = ObservableLibrary(f)
 
             val playQueue = FXCollections.observableArrayList<Track>()
-            val mediaPlayerController = JfxMediaPlayerController(playQueue, observableLibrary)
+            val mediaPlayerController = JfxMediaPlayerController(playQueue, observableLibrary, lastFmClientProperty)
 
             primaryStage.scene = scene<BorderPane>(width = 1920.0, height = 1080.0) {
                 top<VBox> {
                     menuBar {
                         menu("Settings") {
-                            item("Music Library...") {
-                                this.onAction = EventHandler {
-                                    val current = getPreference(
-                                        Preference.LIBRARY_PATH,
-                                        File(System.getProperty("user.home")).resolve("Music").path
-                                    )
-                                    val dialog: TextInputDialog = TextInputDialog(current).apply {
-                                        this.title = "Library Path"
+                            actionItem("Music Library...") {
+                                val current = getPreference(
+                                    Preference.LIBRARY_PATH,
+                                    File(System.getProperty("user.home")).resolve("Music").path
+                                )
+                                val dialog: TextInputDialog = TextInputDialog(current).apply {
+                                    this.title = "Library Path"
+                                }
+                                dialog.contentText = "This is a sample dialog"
+                                val path = dialog.showAndWait()
+                                path.ifPresent {
+                                    libraryPath.set(it)
+                                    observableLibrary.scan()
+                                    putPreference(Preference.LIBRARY_PATH, it)
+                                }
+                            }
+                            val lfm = actionItem("Last FM") {
+                                getToken().also { token ->
+                                    logger().info("token: " + token.token)
+                                    val wv = WebView()
+                                    wv.engine.load(requestAuthUrl(token))
+                                    val popup = Popup()
+                                    val bp = BorderPane().apply {
+                                        center = StackPane(wv)
+                                        bottom<HBox> {
+                                            button("Close") {
+                                                action {
+                                                    getSession(token).run {
+                                                        logger().info("session key: $this")
+                                                        lastFmClientProperty.set(LastFmClient(this))
+                                                        putPreference(Preference.LASTFM_KEY, this)
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
-                                    dialog.contentText = "This is a sample dialog"
-                                    val path = dialog.showAndWait()
-                                    path.ifPresent {
-                                        libraryPath.set(it)
-                                        observableLibrary.scan()
-                                        putPreference(Preference.LIBRARY_PATH, it)
-                                    }
+                                    popup.content.addAll(bp)
+                                    popup.show(primaryStage)
+                                }
+                            }
+                            if (getPreference(Preference.LASTFM_KEY, "").isNotBlank()) {
+                                lfm.isDisable = true
+                                val sessionKey = getPreference(Preference.LASTFM_KEY, "")
+                                logger().info("session key: $sessionKey")
+                                lastFmClientProperty.set(LastFmClient(sessionKey))
+                                actionItem("Reset Last.fm") {
+                                    lastFmClientProperty.set(null)
+                                    putPreference(Preference.LASTFM_KEY, "")
                                 }
                             }
                             checkItem("Continuous Play") {

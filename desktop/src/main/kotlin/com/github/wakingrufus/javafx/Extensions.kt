@@ -133,7 +133,6 @@ inline fun Pane.imageView(image: Image, block: ImageView.() -> Unit = {}): Image
     return ImageView(image).apply(block).attachTo(this)
 }
 
-
 /**
  * Create a column with a value factory that extracts the value from the given callback.
  */
@@ -154,10 +153,6 @@ fun <S, T> TableView<S>.column(
 fun <S> TableView<S>.addColumnInternal(column: TableColumn<S, *>, index: Int? = null) {
     val columnTarget = properties["tornadofx.columnTarget"] as? ObservableList<TableColumn<S, *>> ?: columns
     if (index == null) columnTarget.add(column) else columnTarget.add(index, column)
-}
-
-fun Pane.label(config: Label.() -> Unit): Label {
-    return this.add(config)
 }
 
 fun Pane.label(text: String): Label {
@@ -186,10 +181,10 @@ fun ContextMenu.actionItem(name: String, onAction: EventHandler<ActionEvent>) {
     })
 }
 
-fun Menu.actionItem(name: String, onAction: EventHandler<ActionEvent>) {
-    items.add(MenuItem(name).apply {
+fun Menu.actionItem(name: String, onAction: EventHandler<ActionEvent>): MenuItem {
+    return MenuItem(name).apply {
         setOnAction(onAction)
-    })
+    }.also { items.add(it) }
 }
 
 fun ContextMenu.subMenu(name: String, block: Menu.() -> Unit): Menu {
@@ -278,7 +273,7 @@ val headerCol = TableHeaderRow::class.java.getDeclaredMethod("getColumnHeaderFor
     this.isAccessible = true
 }
 
-inline fun <T> TableView<T>.autoResize() {
+fun <T> TableView<T>.autoResize() {
     items.addListener(ListChangeListener {
         for (column in columns) {
             try {

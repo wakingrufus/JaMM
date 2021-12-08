@@ -19,7 +19,10 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
     val selectedAlbumArtist = SimpleObjectProperty<AlbumArtist>().also {
         it.onChange { selectedAlbumArtist ->
             albums.clear()
-            albums.setAll(library.albums.observableValues().filtered { it.artist == selectedAlbumArtist})
+        //    albums.setAll(library.albums.observableValues().filtered { it.artist == selectedAlbumArtist})
+            albums.setAll(library.tracks.filter { it.albumArtist == selectedAlbumArtist }.groupBy { it.albumKey }
+                .map { (key,tracks) -> Album(albumKey = key, artist = AlbumArtist(key.albumArtist), name = key.albumName, tracks.mapNotNull { it.releaseDate }.firstOrNull(), coverImage = library.getAlbumArt(key)) }
+                .toList().sortedBy { it.releaseDate })
         }
     }
     val albums = FXCollections.observableArrayList<Album>()

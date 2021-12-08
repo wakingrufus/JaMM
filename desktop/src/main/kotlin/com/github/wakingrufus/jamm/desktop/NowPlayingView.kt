@@ -60,8 +60,7 @@ class NowPlayingView(
                             }
                         }
                         center<VBox> {
-
-                            track.image?.also { imageBytes ->
+                            library.getTrackArt(track)?.also { imageBytes ->
                                 add<HBox> {
                                     alignment = Pos.CENTER
                                     imageView(Image(ByteArrayInputStream(imageBytes))) {

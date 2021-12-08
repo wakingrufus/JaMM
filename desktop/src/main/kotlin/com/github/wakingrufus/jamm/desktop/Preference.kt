@@ -5,6 +5,7 @@ import java.util.prefs.Preferences
 enum class Preference(val prefName: String) {
     LIBRARY_PATH("library.path"),
     CONTINUOUS_PLAY("continuous"),
+    LASTFM_KEY("lastfm.session_key"),
     DARK_MODE("dark_mode")
 }
 
