@@ -21,10 +21,7 @@ class LastFmClient(val sessionKey: String) : Logging {
         track.musicBrainzTrackId?.takeIf { it.isNotBlank() }?.also {
             args.add("mbid" to it)
         }
-        signedPost("track.scrobble", sessionKey, args).response().also {
-            logger().info(it.second.responseMessage)
-            logger().info(it.second.body().toByteArray().toString(StandardCharsets.UTF_8))
-        }
+        signedPost("track.scrobble", sessionKey, args).response()
     }
 
     fun nowPlaying(track: Track) {
@@ -40,9 +37,6 @@ class LastFmClient(val sessionKey: String) : Logging {
         track.musicBrainzTrackId?.takeIf { it.isNotBlank() }?.also {
             args.add("mbid" to it)
         }
-        signedPost("track.updatenowplaying", sessionKey, args).response().also {
-            logger().info(it.second.responseMessage)
-            logger().info(it.second.body().toByteArray().toString(StandardCharsets.UTF_8))
-        }
+        signedPost("track.updatenowplaying", sessionKey, args).response()
     }
 }

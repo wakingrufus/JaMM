@@ -176,6 +176,7 @@ class JfxMediaPlayerController(
         javaFxMediaPlayer = null
         clip?.removeLineListener(stopListener)
         clip?.stop()
+        clip?.close()
         clip = null
         GlobalScope.launch(Dispatchers.JavaFx) {
             nowPlayingProperty.set(null)

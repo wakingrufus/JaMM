@@ -13,12 +13,12 @@ import javafx.collections.FXCollections
 import javafx.event.EventHandler
 import javafx.geometry.Side
 import javafx.scene.control.TabPane
-import javafx.scene.control.TextInputDialog
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.scene.web.WebView
+import javafx.stage.DirectoryChooser
 import javafx.stage.Popup
 import javafx.stage.Stage
 import java.io.File
@@ -47,19 +47,16 @@ class Jamm : Application(), Logging {
                     menuBar {
                         menu("Settings") {
                             actionItem("Music Library...") {
-                                val current = getPreference(
-                                    Preference.LIBRARY_PATH,
-                                    File(System.getProperty("user.home")).resolve("Music").path
-                                )
-                                val dialog: TextInputDialog = TextInputDialog(current).apply {
+                                DirectoryChooser().apply {
+                                    this.initialDirectory = File(libraryPath.get())
                                     this.title = "Library Path"
-                                }
-                                dialog.contentText = "This is a sample dialog"
-                                val path = dialog.showAndWait()
-                                path.ifPresent {
-                                    libraryPath.set(it)
-                                    observableLibrary.scan()
-                                    putPreference(Preference.LIBRARY_PATH, it)
+                                }.run {
+                                    val newPath = showDialog(primaryStage)
+                                    newPath?.also {
+                                        libraryPath.set(it.path)
+                                        observableLibrary.scan()
+                                        putPreference(Preference.LIBRARY_PATH, it.path)
+                                    }
                                 }
                             }
                             val lfm = actionItem("Last FM") {
