@@ -1,6 +1,7 @@
 package com.github.wakingrufus.jamm.desktop
 
 import com.github.wakingrufus.jamm.common.*
+import com.github.wakingrufus.jamm.library.LibraryListener
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.collections.ObservableMap
@@ -13,18 +14,18 @@ import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import org.jaudiotagger.tag.id3.ID3v23Tag
 import java.io.File
+import java.util.*
 import java.util.logging.Level
 
 class ObservableLibrary(val rootDir: File) : Logging {
     val playlists: ObservableList<Playlist> = FXCollections.observableArrayList()
-    val albums: ObservableMap<AlbumKey, Album> = FXCollections.observableHashMap()
     val trackPaths: ObservableMap<String, Track> = FXCollections.observableHashMap()
     val tracks: ObservableList<Track> = FXCollections.observableArrayList()
+    val listeners: MutableList<LibraryListener> = mutableListOf()
 
     fun clear() {
         GlobalScope.launch(Dispatchers.JavaFx) {
             playlists.clear()
-            albums.clear()
             trackPaths.clear()
             tracks.clear()
         }
@@ -76,21 +77,6 @@ class ObservableLibrary(val rootDir: File) : Logging {
     fun importTrack(track: Track) {
         tracks.add(track)
         trackPaths[track.path] = track
-        val album = albums.computeIfAbsent(track.albumKey) { albumKey ->
-            buildAlbum(track)
-        }
-//        if (album.coverImage == null) {
-//            if (track.image != null) {
-//                album.coverImage = track.image
-//            } else if (track.file.parentFile.resolve("cover.jpg").exists()) {
-//                album.coverImage = track.file.parentFile.resolve("cover.jpg").readBytes()
-//            } else if (track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.size > 0) {
-//                album.coverImage = track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
-//            }
-//        }
-//        if (track.image == null && album.coverImage != null) {
-//            track.image = album.coverImage
-//        }
     }
 
     fun importPlaylist(playlist: Playlist) {
@@ -121,7 +107,7 @@ class ObservableLibrary(val rootDir: File) : Logging {
         GlobalScope.launch(Dispatchers.Default) {
             val newTrackScans = files
                 .filter { Extensions.music.contains(it.extension.toLowerCase()) }
-                .chunked(500)
+                .chunked(1_000)
                 .map {
                     it.map { readTrack(rootDir, it) }.also {
                         withContext(Dispatchers.JavaFx) {
@@ -137,8 +123,15 @@ class ObservableLibrary(val rootDir: File) : Logging {
                     }
                 }
                 .flatten()
+            listeners.forEach {
+                it.loadComplete()
+            }
             logger().info("scanned ${newTrackScans.size} tracks")
         }
+    }
+
+    fun addListener(listener: LibraryListener){
+        listeners.add(listener)
     }
 }
 
