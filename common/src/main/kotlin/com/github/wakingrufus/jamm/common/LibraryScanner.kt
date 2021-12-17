@@ -47,6 +47,14 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         AlbumArtist("*UNKNOWN*")
     }
 
+    val artist = if(tag.hasField(FieldKey.ARTIST)){
+        Artist(tag.getFirst(FieldKey.ARTIST))
+    }else if (tag.hasField(FieldKey.ALBUM_ARTIST)) {
+        Artist(tag.getFirst(FieldKey.ALBUM_ARTIST))
+    }else {
+        Artist("*UNKNOWN*")
+    }
+
     val tags = tag.getFirst(FieldKey.TAGS).split(",").filter { it.isNotBlank() }
 
     val albumName = if (tag.hasField(FieldKey.ALBUM)) tag.getFirst(FieldKey.ALBUM).let {
@@ -74,6 +82,7 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
     val track = Track(
         title = tag.getFirst(FieldKey.TITLE),
         album = albumName,
+        artist = artist,
         albumArtist = albumArtist,
         trackNumber = tag.getFirst(FieldKey.TRACK).toIntOrNull(),
         albumKey = albumKey,

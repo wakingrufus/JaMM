@@ -1,3 +1,3 @@
 package com.github.wakingrufus.jamm.common
 
-data class AlbumArtist(val name: String)
+data class Artist(val name: String)

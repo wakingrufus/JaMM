@@ -23,11 +23,12 @@ fun Pane.trackTable(
         var tv: TableView<Track>? = null
         center<StackPane> {
             tv = tableView(ReadOnlyListWrapper(items)) {
-                column<Track, String>("Title") { it.value?.title?.toProperty() ?: it.value.path.toProperty() }
-                column<Track, String>("Album Artist") { it.value?.albumArtist?.name.toProperty() }
+                column<Track, String>("Title") { it.value.title.toProperty() }
+                column<Track, String>("Album Artist") { it.value.albumArtist.name.toProperty() }
                 column<Track, String>("Album") { it.value?.album.toProperty() }
                 column<Track, Int>("Disc") { it.value.discNumber.toProperty() }
                 column<Track, Int>("Track #") { it.value.trackNumber.toProperty() }
+                column<Track, String>("Artist"){it.value.artist.name.toProperty()}
                 column<Track, Int>("Year") { it.value.releaseDate?.year.toProperty() }
                 column<Track, String>("Tags") { it.value.tags.joinToString(",").toProperty() }
                 contextMenu {
