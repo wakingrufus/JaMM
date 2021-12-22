@@ -133,8 +133,8 @@ class Jamm : Application(), Logging {
                 }
                 bottom = PlayerBarView(observableLibrary, mediaPlayerController)
             }
-//        val style = if (getPreference(Preference.DARK_MODE, "true").toBoolean()) "/dark.css" else "/light.css"
-// primaryStage.scene.stylesheets.add(Jamm::class.java.getResource(style)?.path)
+            val style = if (getPreference(Preference.DARK_MODE, "true").toBoolean()) "/dark.css" else "/light.css"
+            primaryStage.scene.stylesheets.add(Jamm::class.java.getResource(style)?.toExternalForm())
             primaryStage.show()
             observableLibrary.scan()
         }

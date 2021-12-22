@@ -37,7 +37,8 @@ class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
             }
             label("Year:")
             yearSelection = add {
-                items = library.tracks.grouped { it.releaseDate?.year?.toString() }.sorted()
+                items = library.tracks.grouped { it.releaseDate?.year?.toString() }
+                    .sorted(Comparator.comparing<String, String> { it ?: "" }.reversed())
             }
         }
         val filter: Predicate<Track> = Predicate { track ->
