@@ -12,14 +12,12 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.event.EventHandler
 import javafx.geometry.Side
+import javafx.scene.control.ButtonType
+import javafx.scene.control.Dialog
 import javafx.scene.control.TabPane
 import javafx.scene.layout.BorderPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
-import javafx.scene.web.WebView
 import javafx.stage.DirectoryChooser
-import javafx.stage.Popup
 import javafx.stage.Stage
 import java.io.File
 import java.nio.file.Paths
@@ -62,25 +60,17 @@ class Jamm : Application(), Logging {
                             val lfm = actionItem("Last FM") {
                                 getToken().also { token ->
                                     logger().info("token: " + token.token)
-                                    val wv = WebView()
-                                    wv.engine.load(requestAuthUrl(token))
-                                    val popup = Popup()
-                                    val bp = BorderPane().apply {
-                                        center = StackPane(wv)
-                                        bottom<HBox> {
-                                            button("Close") {
-                                                action {
-                                                    getSession(token).run {
-                                                        logger().info("session key: $this")
-                                                        lastFmClientProperty.set(LastFmClient(this))
-                                                        putPreference(Preference.LASTFM_KEY, this)
-                                                    }
-                                                }
-                                            }
-                                        }
+                                    hostServices.showDocument(requestAuthUrl(token))
+                                    val popup = Dialog<String>().apply {
+                                        contentText = "Log in to last fm in your browser, then close this dialog"
+                                        dialogPane.buttonTypes.add(ButtonType.CLOSE)
                                     }
-                                    popup.content.addAll(bp)
-                                    popup.show(primaryStage)
+                                    popup.showAndWait()
+                                    getSession(token).run {
+                                        logger().info("session key: $this")
+                                        lastFmClientProperty.set(LastFmClient(this))
+                                        putPreference(Preference.LASTFM_KEY, this)
+                                    }
                                 }
                             }
                             if (getPreference(Preference.LASTFM_KEY, "").isNotBlank()) {

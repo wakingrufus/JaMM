@@ -54,3 +54,11 @@ jobs:
           asset_path: ${{ env.ZIP_PATHNAME }}
           asset_name: ${{ env.ZIP_NAME }}
           asset_content_type: application/zip
+      - name: Upload package to PackageCloud
+        uses: danielmundi/upload-packagecloud@v1
+        with:
+          PACKAGE-NAME: ${{ env.ARTIFACT_PATHNAME }}
+          PACKAGECLOUD-USERNAME: wakingrufus
+          PACKAGECLOUD-REPO: public
+          PACKAGECLOUD-DISTRIB: any/any
+          PACKAGECLOUD-TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}

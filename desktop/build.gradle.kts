@@ -23,15 +23,12 @@ dependencies {
     if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
         implementation("org.openjfx:javafx-base:${javafx.version}:win")
         implementation("org.openjfx:javafx-graphics:${javafx.version}:win")
-        implementation("org.openjfx:javafx-web:${javafx.version}:win")
     } else if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_UNIX)) {
         implementation("org.openjfx:javafx-base:${javafx.version}:linux")
         implementation("org.openjfx:javafx-graphics:${javafx.version}:linux")
-        implementation("org.openjfx:javafx-web:${javafx.version}:linux")
     } else if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_MAC)) {
         implementation("org.openjfx:javafx-base:${javafx.version}:mac")
         implementation("org.openjfx:javafx-graphics:${javafx.version}:mac")
-        implementation("org.openjfx:javafx-web:${javafx.version}:mac")
     }
     testImplementation("org.assertj:assertj-core:3.11.1")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
@@ -49,7 +46,7 @@ java {
 }
 javafx {
     version = "16"
-    modules("javafx.controls", "javafx.media", "javafx.web")
+    modules("javafx.controls", "javafx.media")
 }
 
 jlink {
