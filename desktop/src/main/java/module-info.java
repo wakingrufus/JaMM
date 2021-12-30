@@ -16,7 +16,6 @@ module jamm.desktop {
     requires fuel;
     requires result;
     requires fuel.json;
-    requires javafx.web;
     requires org.json;
 
     exports com.github.wakingrufus.jamm.desktop;
