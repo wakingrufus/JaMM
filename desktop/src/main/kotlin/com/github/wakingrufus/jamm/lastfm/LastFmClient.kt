@@ -1,9 +1,10 @@
 package com.github.wakingrufus.jamm.lastfm
 
+import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.wakingrufus.jamm.common.Track
 import com.github.wakingrufus.jamm.desktop.Logging
-import com.github.wakingrufus.jamm.desktop.globalLogger
 import com.github.wakingrufus.jamm.desktop.logger
+import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
@@ -23,10 +24,7 @@ class LastFmClient(val sessionKey: String) : Logging {
             args.add("mbid" to it)
         }
         signedPost("track.scrobble", sessionKey, args).response().also {
-            if (it.third.component2() != null) {
-                logger().warn(it.second.responseMessage)
-                logger().warn(it.second.body().toByteArray().toString(StandardCharsets.UTF_8))
-            }
+            it.logError(logger())
         }
     }
 
@@ -44,10 +42,16 @@ class LastFmClient(val sessionKey: String) : Logging {
             args.add("mbid" to it)
         }
         signedPost("track.updatenowplaying", sessionKey, args).response().also {
-            if (it.third.component2() != null) {
-                logger().warn(it.second.responseMessage)
-                logger().warn(it.second.body().toByteArray().toString(StandardCharsets.UTF_8))
-            }
+            it.logError(logger())
         }
+    }
+}
+
+fun ResponseResultOf<ByteArray>.logError(logger: Logger) {
+    if (third.component2() != null) {
+        logger.warn(third.component2()?.message)
+        logger.warn(second.statusCode.toString())
+        logger.warn(second.responseMessage)
+        logger.warn(second.body().toByteArray().toString(StandardCharsets.UTF_8))
     }
 }
