@@ -63,7 +63,14 @@ This method will work on almost any computer with Java 17.
 
 #### Debian Linux
 This method is preferred for Debian linux. It requires no Java to be installed.
-Download the `.deb` from the [latest release](https://github.com/wakingrufus/JaMM/releases/latest) and install it with your package manager.
+To add the Jamm deb repo, run the following terminal commands:
+```bash 
+curl -L https://packagecloud.io/wakingrufus/public/gpgkey | sudo apt-key add -
+sudo add-apt-repository "deb https://packagecloud.io/wakingrufus/public/any/ any main"
+sudo apt install jamm
+```
+
+You can also download the `.deb` from the [latest release](https://github.com/wakingrufus/JaMM/releases/latest) and install it with your package manager.
 
 ### Set music library directory
 The default Music library directory is `~/Music`. To change this, use the Settings menu.
