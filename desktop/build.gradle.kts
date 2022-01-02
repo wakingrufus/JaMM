@@ -66,6 +66,7 @@ jlink {
         requires("java.instrument")
         requires("jdk.jfr")
         requires("jdk.unsupported")
+        requires("jdk.crypto.ec")
         provides("javax.sound.sampled.spi.AudioFileReader")
             .with("com.github.trilarion.sound.vorbis.sampled.spi.VorbisAudioFileReader")
         provides("kotlinx.coroutines.internal.MainDispatcherFactory")
