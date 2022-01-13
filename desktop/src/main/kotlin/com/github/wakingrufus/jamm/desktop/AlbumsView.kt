@@ -23,6 +23,10 @@ class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
     }
     lateinit var yearSelection: ComboBox<String>
 
+    fun viewAlbum(albumKey: AlbumKey){
+        selectedAlbum.set(albumKey)
+    }
+
     init {
         top<HBox> {
             button("Play Random Album") {

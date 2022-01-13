@@ -1,5 +1,7 @@
 package com.github.wakingrufus.jamm.desktop
 
+import com.github.wakingrufus.jamm.common.AlbumArtist
+import com.github.wakingrufus.jamm.common.AlbumKey
 import com.github.wakingrufus.jamm.common.Track
 import com.github.wakingrufus.javafx.*
 import javafx.collections.FXCollections
@@ -11,9 +13,8 @@ import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
 import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
-import javafx.scene.layout.BorderPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.javafx.JavaFx
@@ -28,6 +29,9 @@ class NowPlayingView(
     val library: ObservableLibrary,
     val mediaPlayerController: MediaPlayerController,
     val queue: ObservableList<Track>,
+    viewAlbum: (AlbumKey) -> Unit,
+    viewAlbumArtist: (AlbumArtist) -> Unit,
+    viewTag: (String) -> Unit
 ) : BorderPane(), Logging {
     init {
         center<BorderPane> {
@@ -47,12 +51,26 @@ class NowPlayingView(
                             }
                             add<VBox> {
                                 children.bind(tagList) { tag ->
-                                    HBox().apply {
-                                        label(tag)
-                                        button("x") {
-                                            action {
-                                                tagList.remove(tag)
-                                                library.setTags(track, track.tags.minus(tag))
+                                    BorderPane().apply {
+                                        this.border = Border(
+                                            BorderStroke(
+                                                Color.BLACK, BorderStrokeStyle.SOLID,
+                                                CornerRadii(2.0), BorderWidths.DEFAULT
+                                            )
+                                        )
+                                        center<Label> {
+                                            this.text = tag
+                                            clickableHoverEffect()
+                                            setOnMouseClicked {
+                                                viewTag.invoke(tag)
+                                            }
+                                        }
+                                        right<StackPane> {
+                                            button("x") {
+                                                action {
+                                                    tagList.remove(tag)
+                                                    library.setTags(track, track.tags.minus(tag))
+                                                }
                                             }
                                         }
                                     }
@@ -77,13 +95,21 @@ class NowPlayingView(
                             label(track.albumArtist.name) {
                                 style = "-fx-font-weight: bold; -fx-font-size: 24; -fx-font-family: 'Noto Sans CJK JP';"
                                 alignment = Pos.CENTER
+                                clickableHoverEffect()
+                                this.textFill
+                                setOnMouseClicked {
+                                    viewAlbumArtist.invoke(track.albumArtist)
+                                }
                             }
                             label(track.album) {
                                 style =
                                     "-fx-font-style: italic; -fx-font-size: 24; -fx-font-family: 'Noto Sans CJK JP';"
                                 alignment = Pos.CENTER
+                                clickableHoverEffect()
+                                setOnMouseClicked {
+                                    viewAlbum.invoke(track.albumKey)
+                                }
                             }
-
                         }
                     }
 

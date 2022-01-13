@@ -14,6 +14,7 @@ import javafx.event.EventHandler
 import javafx.geometry.Side
 import javafx.scene.control.ButtonType
 import javafx.scene.control.Dialog
+import javafx.scene.control.Tab
 import javafx.scene.control.TabPane
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.VBox
@@ -99,29 +100,54 @@ class Jamm : Application(), Logging {
                         }
                     }
                 }
-                center<TabPane> {
+                val albumView = AlbumsView(observableLibrary, mediaPlayerController)
+                val albumArtistView = AlbumArtistView(observableLibrary, mediaPlayerController)
+                val tagView = TagView(observableLibrary, mediaPlayerController)
+                var albumTab: Tab? = null
+                var albumArtistTab: Tab? = null
+                var tagTab: Tab? = null
+                val tabPane = center<TabPane> {
                     tabClosingPolicy = TabPane.TabClosingPolicy.UNAVAILABLE
                     tab("Now Playing") {
-                        NowPlayingView(observableLibrary, mediaPlayerController, playQueue)
+                        NowPlayingView(
+                            library = observableLibrary,
+                            mediaPlayerController = mediaPlayerController,
+                            queue = playQueue,
+                            viewAlbum = {
+                                this.selectionModel.select(albumTab)
+                                albumView.viewAlbum(it)
+                            }, viewAlbumArtist = {
+                                this.selectionModel.select(albumArtistTab)
+                                albumArtistView.viewAlbumArtist(it)
+                            }, viewTag = {
+                                this.selectionModel.select(tagTab)
+                                tagView.viewTag(it)
+                            })
                     }
                     tab("Playlists") {
                         PlaylistView(observableLibrary, mediaPlayerController)
                     }
-                    tab("Album Artists") {
-                        AlbumArtistView(observableLibrary, mediaPlayerController)
+                    albumArtistTab = tab("Album Artists") {
+                        albumArtistView
                     }
-                    tab("Albums") {
-                        AlbumsView(observableLibrary, mediaPlayerController)
+                    albumTab = tab("Albums") {
+                        albumView
                     }
                     tab("Tracks") {
                         TracksView(observableLibrary, mediaPlayerController)
                     }
-                    tab("Tags") {
-                        TagView(observableLibrary, mediaPlayerController)
+                    tagTab = tab("Tags") {
+                        tagView
                     }
                     this.side = Side.LEFT
                 }
-                bottom = PlayerBarView(observableLibrary, mediaPlayerController)
+                bottom = PlayerBarView(observableLibrary, mediaPlayerController, {
+                    tabPane.selectionModel.select(albumTab)
+                    albumView.viewAlbum(it)
+                }, {
+                    tabPane.selectionModel.select(albumArtistTab)
+                    albumArtistView.viewAlbumArtist(it)
+                })
             }
             val style = if (getPreference(Preference.DARK_MODE, "true").toBoolean()) "/dark.css" else "/light.css"
             primaryStage.scene.stylesheets.add(Jamm::class.java.getResource(style)?.toExternalForm())
