@@ -39,6 +39,9 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
         }
     }
     val albums = FXCollections.observableArrayList<Album>()
+    fun viewAlbumArtist(albumArtist: AlbumArtist){
+        selectedAlbumArtist.set(albumArtist)
+    }
     lateinit var query: TextField
     fun applyFilter() {
         GlobalScope.launch(Dispatchers.Default) {

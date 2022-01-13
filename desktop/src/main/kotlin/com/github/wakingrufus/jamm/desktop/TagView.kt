@@ -18,6 +18,10 @@ class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerContro
         }
     }
 
+    fun viewTag(tag: String) {
+        selectedTag.set(tag)
+    }
+
     init {
         left<StackPane> {
             listview(library.tracks.flatMappedUnique { it.tags }.sorted()) {

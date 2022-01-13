@@ -259,8 +259,10 @@ fun Menu.checkItem(name: String, item: CheckMenuItem.() -> Unit): CheckMenuItem 
     return CheckMenuItem(name).apply(item).also { this.items.add(it) }
 }
 
-fun TabPane.tab(name: String, content: () -> Pane) {
-    this.tabs.add(Tab(name, content.invoke()))
+fun TabPane.tab(name: String, content: () -> Pane) : Tab {
+   return Tab(name, content.invoke()).also {
+        this.tabs.add(it)
+    }
 }
 
 val resizeMethod = TableColumnHeader::class.java.getDeclaredMethod("resizeColumnToFitContent", Int::class.java).apply {

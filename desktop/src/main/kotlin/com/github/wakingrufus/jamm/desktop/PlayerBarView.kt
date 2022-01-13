@@ -1,5 +1,7 @@
 package com.github.wakingrufus.jamm.desktop
 
+import com.github.wakingrufus.jamm.common.AlbumArtist
+import com.github.wakingrufus.jamm.common.AlbumKey
 import com.github.wakingrufus.javafx.*
 import javafx.geometry.Insets
 import javafx.geometry.Pos
@@ -13,7 +15,9 @@ import java.io.ByteArrayInputStream
 
 class PlayerBarView(
     val library: ObservableLibrary,
-    mediaPlayerController: MediaPlayerController
+    mediaPlayerController: MediaPlayerController,
+    viewAlbum: (AlbumKey) -> Unit,
+    viewAlbumArtist : (AlbumArtist) -> Unit
 ) : HBox(), Logging {
     init {
         val playButton = ImageView(Image(PlayerBarView::class.java.getResourceAsStream("/play-white.png"))).apply {
@@ -62,11 +66,19 @@ class PlayerBarView(
                             font = Font.font(18.0)
                             style = "-fx-font-weight: bold; -fx-font-family: 'Noto Sans CJK JP';"
                             alignment = Pos.CENTER_LEFT
+                            clickableHoverEffect()
+                            setOnMouseClicked {
+                                viewAlbumArtist.invoke(track.albumArtist)
+                            }
                         }
                         label(it.album) {
                             font = Font.font(18.0)
                             style = "-fx-font-style: italic; -fx-font-family: 'Noto Sans CJK JP';"
                             alignment = Pos.CENTER_LEFT
+                            clickableHoverEffect()
+                            setOnMouseClicked {
+                                viewAlbum.invoke(track.albumKey)
+                            }
                         }
                     }
 
