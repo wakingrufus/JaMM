@@ -125,6 +125,15 @@ class NowPlayingView(
                 val total = right<Label> {
                     this.maxWidth(120.0)
                 }
+                val loadingLabel = top<Label>{
+                    text = "Loading Library..."
+                }
+                library.addListener {
+                    GlobalScope.launch(Dispatchers.JavaFx) {
+                        bar.progress = 0.0
+                        loadingLabel.text = ""
+                    }
+                }
                 mediaPlayerController.getProgressProperty().onChange {
                     GlobalScope.launch(Dispatchers.JavaFx) {
                         bar.progress = it

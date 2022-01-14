@@ -35,7 +35,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
 }
 
-tasks.withType(Test::class.java){
+tasks.withType(Test::class.java) {
     useJUnitPlatform()
 }
 
@@ -75,9 +75,17 @@ jlink {
             .with("com.github.trilarion.sound.vorbis.sampled.spi.VorbisFormatConversionProvider")
     }
     jpackage {
-        installerOptions = listOf("--description", project.description)
-        installerType = "deb"
-        installerOptions = listOf("--linux-shortcut")
+        if (org.gradle.internal.os.OperatingSystem.current().isLinux) {
+            installerOptions = listOf("--description", project.description, "--linux-shortcut")
+            installerType = "deb"
+        } else if (org.gradle.internal.os.OperatingSystem.current().isWindows) {
+            installerOptions = listOf("--win-per-user-install", "--win-dir-chooser", "--win-menu", "--win-shortcut")
+            imageOptions.add("--win-console")
+            installerType = "msi"
+        } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX) {
+            installerOptions = listOf("--description", project.description)
+            installerType = "pkg"
+        }
     }
 }
 
