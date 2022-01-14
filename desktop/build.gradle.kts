@@ -7,7 +7,7 @@ plugins {
     id("org.beryx.jlink") version "2.24.1"
     id("org.javamodularity.moduleplugin")
 }
-
+project.description = "JavaFx Music Manager"
 dependencies {
     implementation(project(":common"))
     implementation(kotlin("reflect"))
