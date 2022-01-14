@@ -14,6 +14,7 @@ Other formats may be supported but are as yet untested.
 - [Tracks](#tracks)
 - Last.FM Scrobbling
 - Continuous Play Mode (plays random tracks when queue is empty)
+- Dark Mode
 
 ### Now Playing
 ![Now Playing Interface](docs/NowPlaying.png)
@@ -49,7 +50,6 @@ You can also export tags to an m3u file for compatibility with other players.
 - More Audio Formats
 - Installers for more architectures
 - More options for continuous play mode
-- Dark Mode
 
 ## Getting Started
 
@@ -71,6 +71,9 @@ sudo apt install jamm
 ```
 
 You can also download the `.deb` from the [latest release](https://github.com/wakingrufus/JaMM/releases/latest) and install it with your package manager.
+
+#### Mac OS
+Download the `.pkg` from the [latest release](https://github.com/wakingrufus/JaMM/releases/latest) and install it with your package manager.
 
 ### Set music library directory
 The default Music library directory is `~/Music`. To change this, use the Settings menu.
