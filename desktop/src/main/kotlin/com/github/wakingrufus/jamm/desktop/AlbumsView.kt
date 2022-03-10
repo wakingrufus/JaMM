@@ -6,10 +6,15 @@ import com.github.wakingrufus.javafx.*
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.scene.control.ComboBox
+import javafx.scene.control.ListView
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
-import java.util.function.Predicate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
     val tracks = FXCollections.observableArrayList<Track>()
@@ -22,12 +27,31 @@ class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
         }
     }
     lateinit var yearSelection: ComboBox<String>
+    lateinit var albumListView: ListView<AlbumKey>
 
-    fun viewAlbum(albumKey: AlbumKey){
+    fun viewAlbum(albumKey: AlbumKey) {
         selectedAlbum.set(albumKey)
     }
 
+    fun applyFilter() {
+        GlobalScope.launch(Dispatchers.Default) {
+            val newItems = library.tracks
+                .filtered { track ->
+                    yearSelection.selectionModel.isEmpty
+                            || yearSelection.selectionModel.selectedItem == null
+                            || (track.releaseDate == null && yearSelection.selectionModel.selectedItem.isBlank())
+                            || (track.releaseDate?.year.toString() == yearSelection.selectionModel.selectedItem)
+                }
+                .grouped { it.albumKey }
+                .sorted(Comparator.comparing { it.albumName })
+            withContext(Dispatchers.JavaFx) {
+                albumListView.items = newItems
+            }
+        }
+    }
+
     init {
+        library.addListener { applyFilter() }
         top<HBox> {
             button("Play Random Album") {
                 this.action {
@@ -44,26 +68,22 @@ class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
                 items = library.tracks.grouped { it.releaseDate?.year?.toString() }
                     .sorted(Comparator.comparing<String, String> { it ?: "" }.reversed())
             }
+            button("Clear Filter") {
+                action {
+                    yearSelection.selectionModel.clearSelection()
+                }
+            }
         }
-        val filter: Predicate<Track> = Predicate { track ->
-            yearSelection.selectionModel.isEmpty
-                    || yearSelection.selectionModel.selectedItem == null
-                    || (track.releaseDate == null && yearSelection.selectionModel.selectedItem.isBlank())
-                    || (track.releaseDate?.year.toString() == yearSelection.selectionModel.selectedItem)
-        }
+
         left<StackPane> {
-            listview(library.tracks
-                .filtered(filter)
+            albumListView = listview(library.tracks
                 .grouped { it.albumKey }
                 .sorted(Comparator.comparing { it.albumName })
             ) {
                 this.cellFactory = CustomStringCellFactory { it.albumName + " - " + it.albumArtist }
                 bindSelected(selectedAlbum)
                 yearSelection.selectionModel.selectedItemProperty().onChange {
-                    this.items = library.tracks
-                        .filtered(filter)
-                        .grouped { it.albumKey }
-                        .sorted(Comparator.comparing { it.albumName })
+                    applyFilter()
                 }
             }
         }
