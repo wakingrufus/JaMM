@@ -17,6 +17,7 @@ module jamm.desktop {
     requires result;
     requires fuel.json;
     requires org.json;
+    requires commons.csv;
 
     exports com.github.wakingrufus.jamm.desktop;
     exports com.github.wakingrufus.javafx;

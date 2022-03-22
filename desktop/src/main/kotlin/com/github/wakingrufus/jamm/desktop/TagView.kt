@@ -1,13 +1,18 @@
 package com.github.wakingrufus.jamm.desktop
 
 import com.github.wakingrufus.jamm.common.Track
+import com.github.wakingrufus.jamm.library.LibraryListener
 import com.github.wakingrufus.javafx.*
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.StackPane
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.launch
 
-class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane() {
+class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedTag = SimpleObjectProperty<String>().also {
         it.onChange { selected ->
@@ -24,7 +29,14 @@ class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerContro
 
     init {
         left<StackPane> {
-            listview(library.tracks.flatMappedUnique { it.tags }.sorted()) {
+            val tagList = FXCollections.observableArrayList<String>()
+            library.addTagListener {
+                GlobalScope.launch(Dispatchers.JavaFx) {
+                    tagList.clear()
+                    tagList.addAll(library.tracks.flatMapUnique { it.tags }.sorted())
+                }
+            }
+            listview(tagList) {
                 bindSelected(selectedTag)
                 contextMenu {
                     actionItem("Export") {

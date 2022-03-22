@@ -60,7 +60,7 @@ fun Pane.trackTable(
                     }
                     this.onShown = EventHandler {
                         subMenu.items.clear()
-                        library.tracks.flatMappedUnique { it.tags }.sorted().forEach { tag ->
+                        library.tracks.flatMapUnique { it.tags }.sorted().forEach { tag ->
                             subMenu.actionItem(tag) {
                                 this@tableView.selectionModel?.selectedItems?.run {
                                     this.forEach {

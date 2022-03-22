@@ -19,6 +19,7 @@ dependencies {
     implementation("com.github.trilarion:java-vorbis-support:1.2.1")
     implementation("com.github.kittinunf.fuel:fuel-json:2.3.1")
     implementation("org.json:json:20200518")
+    implementation("org.apache.commons:commons-csv:1.4")
 
     if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
         implementation("org.openjfx:javafx-base:${javafx.version}:win")
