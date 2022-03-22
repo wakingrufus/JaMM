@@ -14,7 +14,6 @@ data class Track(
     val file: File,
     val releaseDate: LocalDate? = null,
     val path: String,
-    var image: ByteArray? = null,
     val tags: MutableSet<String>,
     val musicBrainzTrackId: String?
 )

@@ -179,7 +179,7 @@ private class ListFlatMappedUniqueBinder<I, O>(val list: ObservableList<O>, val 
             if (change.wasRemoved()) {
                 change.removed.flatMap(op).forEach { group ->
                     if (change.list.none { it == group }) {
-                        list.remove(list.indexOf(group), list.indexOf(group) + 1)
+                        list.remove(group)
                     }
                 }
             }
@@ -237,6 +237,10 @@ fun <I, O> ObservableList<I>.flatMappedUnique(op: (I) -> Collection<O>): Observa
     val list: ObservableList<O> = FXCollections.observableList(this.flatMap(op).toSet().toMutableList())
     this.addListener(ListFlatMappedUniqueBinder(list, op))
     return FXCollections.unmodifiableObservableList(list)
+}
+
+fun <I, O> List<I>.flatMapUnique(op: (I) -> Collection<O>): List<O> {
+    return this.flatMap(op).toSet().toMutableList()
 }
 
 fun <E : Collection<F>, F> ObservableList<E>.flattened(): ObservableList<F> {

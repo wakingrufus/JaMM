@@ -91,9 +91,6 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         releaseDate = date,
         path = file.toRelativeString(rootFile),
         tags = tags.toMutableSet(),
-//        image = if (tag.artworkList.isNotEmpty()) {
-//            tag.firstArtwork?.binaryData
-//        } else null,
         musicBrainzTrackId = tag.getFirst(FieldKey.MUSICBRAINZ_TRACK_ID)
     )
     return ScanResult.TrackSuccess(track)
