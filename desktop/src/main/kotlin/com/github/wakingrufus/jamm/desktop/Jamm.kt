@@ -45,6 +45,7 @@ class Jamm : Application(), Logging {
                 top<VBox> {
                     menuBar {
                         menu("Settings") {
+
                             actionItem("Music Library...") {
                                 DirectoryChooser().apply {
                                     this.initialDirectory = File(libraryPath.get())
@@ -84,18 +85,39 @@ class Jamm : Application(), Logging {
                                     putPreference(Preference.LASTFM_KEY, "")
                                 }
                             }
-                            checkItem("Continuous Play") {
-                                this.onAction = EventHandler {
-                                    putPreference(Preference.CONTINUOUS_PLAY, this.isSelected.toString())
-                                }
-                                this.selectedProperty()
-                                    .set(getPreference(Preference.CONTINUOUS_PLAY, "false").toBoolean())
-                            }
                             checkItem("Dark Mode") {
-                                this.onAction = EventHandler {
+                                setOnAction {
                                     putPreference(Preference.DARK_MODE, this.isSelected.toString())
                                 }
                                 this.selectedProperty().set(getPreference(Preference.DARK_MODE, "true").toBoolean())
+                            }
+                            separator {
+
+                            }
+                            subMenu("Continuous Mode") {
+                                toggleGroup {
+                                    radio(ContinuousMode.OFF.toString()) {
+                                        setOnAction {
+                                            putPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF.toString())
+                                        }
+                                        selectedProperty()
+                                            .set(getPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF) == ContinuousMode.OFF)
+                                    }
+                                    radio(ContinuousMode.TAG.toString()) {
+                                        setOnAction {
+                                            putPreference(Preference.CONTINUOUS_MODE, ContinuousMode.TAG.toString())
+                                        }
+                                        selectedProperty()
+                                            .set(getPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF) == ContinuousMode.TAG)
+                                    }
+                                    radio(ContinuousMode.RANDOM.toString()) {
+                                        setOnAction {
+                                            putPreference(Preference.CONTINUOUS_MODE, ContinuousMode.RANDOM.toString())
+                                        }
+                                        selectedProperty()
+                                            .set(getPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF) == ContinuousMode.RANDOM)
+                                    }
+                                }
                             }
                         }
                     }

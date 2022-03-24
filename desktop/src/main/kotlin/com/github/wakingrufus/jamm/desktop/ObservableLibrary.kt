@@ -23,7 +23,6 @@ import java.io.FileReader
 import java.io.FileWriter
 import java.util.logging.Level
 
-
 class ObservableLibrary(val rootDir: File) : Logging {
     val playlists: ObservableList<Playlist> = FXCollections.observableArrayList()
     val trackPaths: ObservableMap<String, Track> = FXCollections.observableHashMap()
@@ -68,10 +67,10 @@ class ObservableLibrary(val rootDir: File) : Logging {
                 })
     }
 
-    fun importCsv(){
+    fun importCsv() {
         GlobalScope.launch(Dispatchers.Default) {
             val csvFile = rootDir.resolve("jamm.csv")
-            val reader  = FileReader(csvFile)
+            val reader = FileReader(csvFile)
             val headers = trackCsvFields.map { it.header }
             val records: Iterable<CSVRecord> = CSVFormat.DEFAULT
                 .withHeader(*headers.toTypedArray())
@@ -153,17 +152,17 @@ class ObservableLibrary(val rootDir: File) : Logging {
         GlobalScope.launch(Dispatchers.Default) {
             val newTrackScans = files
                 .filter { Extensions.music.contains(it.extension.toLowerCase()) }
-                .chunked(1_000)
-                .map {
-                    it.map { readTrack(rootDir, it) }
-                }
-                .flatten()
-            newTrackScans.filterIsInstance<ScanResult.ScanFailure>().forEach {  logger().error(it.error) }
-            val newTracks = newTrackScans.filterIsInstance<ScanResult.TrackSuccess>().map {  it.track }
+                .map { readTrack(rootDir, it) }
+            newTrackScans.filterIsInstance<ScanResult.ScanFailure>().forEach { logger().error(it.error) }
+            val newTracks = newTrackScans.filterIsInstance<ScanResult.TrackSuccess>().map { it.track }
             withContext(Dispatchers.JavaFx) {
                 trackPaths.clear()
                 tracks.clear()
-                newTracks.forEach { importTrack(it) }
+            }
+            newTracks.chunked(500).forEach {
+                withContext(Dispatchers.JavaFx) {
+                    it.forEach { importTrack(it) }
+                }
             }
             listeners.forEach {
                 it.loadComplete()
@@ -173,11 +172,11 @@ class ObservableLibrary(val rootDir: File) : Logging {
         }
     }
 
-    fun addListener(listener: LibraryListener){
+    fun addListener(listener: LibraryListener) {
         listeners.add(listener)
     }
 
-    fun addTagListener(listener: LibraryListener){
+    fun addTagListener(listener: LibraryListener) {
         tagListeners.add(listener)
     }
 }
