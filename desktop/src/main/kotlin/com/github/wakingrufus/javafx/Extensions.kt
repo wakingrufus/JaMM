@@ -251,8 +251,26 @@ fun MenuBar.menu(name: String, menu: Menu.() -> Unit): Menu {
     return Menu(name).apply(menu).also { this.menus.add(it) }
 }
 
+fun Menu.subMenu(name: String, menu: Menu.() -> Unit): Menu {
+    return Menu(name).apply(menu).also { this.items.add(it) }
+}
+class TOGGLE(val menu: Menu, val toggleGroup: ToggleGroup){
+    fun radio(name: String, radio: RadioMenuItem.() -> Unit){
+        RadioMenuItem(name).apply(radio).apply {
+            menu.items.add(this)
+            this.toggleGroup = toggleGroup
+        }
+    }
+}
+fun Menu.toggleGroup(toggleGroup: TOGGLE.() -> Unit){
+    TOGGLE(this, ToggleGroup()).apply(toggleGroup)
+}
 fun Menu.item(name: String, item: MenuItem.() -> Unit): MenuItem {
     return MenuItem(name).apply(item).also { this.items.add(it) }
+}
+
+fun Menu.separator(item: SeparatorMenuItem.() -> Unit): MenuItem {
+    return SeparatorMenuItem().apply(item).also { this.items.add(it) }
 }
 
 fun Menu.checkItem(name: String, item: CheckMenuItem.() -> Unit): CheckMenuItem {

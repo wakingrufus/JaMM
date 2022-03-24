@@ -146,8 +146,16 @@ class JfxMediaPlayerController(
                 nowPlayingProperty.set(track)
                 updateProgress(track)
                 queue.remove(track)
-                if (queue.isEmpty() && getPreference(Preference.CONTINUOUS_PLAY, "false").toBoolean()) {
-                    queue.add(library.tracks.random())
+                if (queue.isEmpty()) {
+                    val continuousMode = getPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF)
+                    if (continuousMode == ContinuousMode.RANDOM) {
+                        queue.add(library.tracks.random())
+                    } else if (continuousMode == ContinuousMode.TAG) {
+                        queue.add(library.tracks
+                            .filter { it.tags.any { track.tags.contains(it) } }
+                            .randomOrNull()
+                            ?: library.tracks.random())
+                    }
                 }
             }
         }
