@@ -88,6 +88,9 @@ class ObservableLibrary(val rootDir: File) : Logging {
                 listeners.forEach {
                     it.loadComplete()
                 }
+                tagListeners.forEach {
+                    it.loadComplete()
+                }
             }
 
         }
@@ -165,6 +168,9 @@ class ObservableLibrary(val rootDir: File) : Logging {
                 }
             }
             listeners.forEach {
+                it.loadComplete()
+            }
+            tagListeners.forEach {
                 it.loadComplete()
             }
             logger().info("scanned ${newTrackScans.size} tracks")
