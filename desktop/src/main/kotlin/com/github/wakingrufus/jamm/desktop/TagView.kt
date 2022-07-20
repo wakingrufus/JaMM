@@ -1,7 +1,6 @@
 package com.github.wakingrufus.jamm.desktop
 
 import com.github.wakingrufus.jamm.common.Track
-import com.github.wakingrufus.jamm.library.LibraryListener
 import com.github.wakingrufus.javafx.*
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
@@ -30,13 +29,7 @@ class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerContro
     init {
         left<StackPane> {
             val tagList = FXCollections.observableArrayList<String>()
-            library.addTagListener {
-                GlobalScope.launch(Dispatchers.JavaFx) {
-                    tagList.clear()
-                    tagList.addAll(library.tracks.flatMapUnique { it.tags }.sorted())
-                }
-            }
-            listview(tagList) {
+            val listView = listview(tagList) {
                 bindSelected(selectedTag)
                 contextMenu {
                     actionItem("Export") {
@@ -45,6 +38,16 @@ class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerContro
                                 library.exportTagPlaylist(it)
                             }
                         }
+                    }
+                }
+            }
+            library.addTagListener {
+                val oldSelection = selectedTag.get()
+                GlobalScope.launch(Dispatchers.JavaFx) {
+                    tagList.clear()
+                    tagList.addAll(library.tracks.flatMapUnique { it.tags }.sorted())
+                    if (oldSelection != null) {
+                        listView.selectionModel.select(oldSelection)
                     }
                 }
             }

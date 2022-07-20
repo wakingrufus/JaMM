@@ -67,10 +67,11 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
             }
         else null
     val albumKey = AlbumKey(
-        id = releaseId,
         albumArtist = albumArtist.name,
         albumName = albumName
-    )
+    ).apply {
+        id = releaseId
+    }
     val originalYear = tag.getFirst(FieldKey.ORIGINAL_YEAR)
     val originalDate = tag.getFirst(FieldKey.ORIGINALRELEASEDATE)
     val year = tag.getFirst(FieldKey.YEAR)
