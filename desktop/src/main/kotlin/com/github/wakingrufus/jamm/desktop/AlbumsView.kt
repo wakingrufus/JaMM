@@ -28,12 +28,13 @@ class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
     }
     lateinit var yearSelection: ComboBox<String>
     lateinit var albumListView: ListView<AlbumKey>
+    val albums = FXCollections.observableArrayList<AlbumKey>()
 
     fun viewAlbum(albumKey: AlbumKey) {
         selectedAlbum.set(albumKey)
     }
 
-    fun applyFilter() {
+    fun applyFilter(selection: AlbumKey? = null) {
         GlobalScope.launch(Dispatchers.Default) {
             val newItems = library.tracks
                 .filtered { track ->
@@ -45,16 +46,22 @@ class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
                 .grouped { it.albumKey }
                 .sorted(Comparator.comparing { it.albumName })
             withContext(Dispatchers.JavaFx) {
-                albumListView.items = newItems
+                albums.setAll(newItems)
+                if (selection != null) {
+                    albumListView.selectionModel.select(selection)
+                }
             }
         }
     }
 
     init {
-        library.addListener { applyFilter() }
+        library.addListener {
+            val oldSelection = selectedAlbum.get()
+            applyFilter(selection = oldSelection)
+        }
         top<HBox> {
             button("Play Random Album") {
-                this.action {
+                action {
                     library.tracks.grouped { it.albumKey }.random().also { selectedAlbumKey ->
                         mediaPlayer.play(library.tracks.filtered { it.albumKey == selectedAlbumKey }
                             ?.sortedBy { it.trackNumber }
@@ -75,15 +82,41 @@ class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerCon
             }
         }
 
-        left<StackPane> {
-            albumListView = listview(library.tracks
-                .grouped { it.albumKey }
-                .sorted(Comparator.comparing { it.albumName })
-            ) {
-                this.cellFactory = CustomStringCellFactory { it.albumName + " - " + it.albumArtist }
-                bindSelected(selectedAlbum)
-                yearSelection.selectionModel.selectedItemProperty().onChange {
-                    applyFilter()
+        left<BorderPane> {
+            top<HBox> {
+                label("Sort:")
+                button("Alpha") {
+                    action {
+                        GlobalScope.launch(Dispatchers.Default) {
+                            val newAlbums = library.tracks
+                                .grouped { it.albumKey }
+                                .sorted(Comparator.comparing { it.albumName })
+                            withContext(Dispatchers.JavaFx) {
+                                albums.setAll(newAlbums)
+                            }
+                        }
+                    }
+                }
+                button("Random") {
+                    action {
+                        GlobalScope.launch(Dispatchers.Default) {
+                            val newAlbums = library.tracks
+                                .grouped { it.albumKey }
+                                .shuffled()
+                            withContext(Dispatchers.JavaFx) {
+                                albums.setAll(newAlbums)
+                            }
+                        }
+                    }
+                }
+            }
+            center<StackPane> {
+                albumListView = listview(albums) {
+                    this.cellFactory = CustomStringCellFactory { it.albumName + " - " + it.albumArtist }
+                    bindSelected(selectedAlbum)
+                    yearSelection.selectionModel.selectedItemProperty().onChange {
+                        applyFilter()
+                    }
                 }
             }
         }

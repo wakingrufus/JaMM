@@ -16,7 +16,9 @@ fun CSVRecord.toTrack(baseDir: File): Track {
         album = get("album"),
         albumArtist = AlbumArtist(get("albumArtist")),
         artist = Artist(get("artist")),
-        albumKey = AlbumKey(albumIdString.ifBlank { null }, get("albumArtist"), get("album")),
+        albumKey = AlbumKey(get("albumArtist"), get("album")).apply {
+            id = albumIdString.ifBlank { null }
+        },
         trackNumber = get("trackNumber").toIntOrNull(),
         discNumber = get("discNumber").toIntOrNull(),
         path = get("path"),
