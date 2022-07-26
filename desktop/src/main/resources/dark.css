@@ -69,6 +69,10 @@
     /* Brighter border on selection */
     -fx-border-color: -fx-border-focus;
 }
+.album:focused {
+    -fx-border-color:-fx-accent;
+    -fx-border-radius: 4px;
+}
 .combo-box:focused > .arrow-button {
     /* Brighter border on selection */
     -fx-border-color: -fx-border-focus;
