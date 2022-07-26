@@ -8,9 +8,15 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.event.EventHandler
+import javafx.geometry.Insets
+import javafx.geometry.Pos
+import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextField
 import javafx.scene.image.Image
-import javafx.scene.layout.*
+import javafx.scene.layout.BorderPane
+import javafx.scene.layout.HBox
+import javafx.scene.layout.StackPane
+import javafx.scene.layout.VBox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.javafx.JavaFx
@@ -39,9 +45,10 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
         }
     }
     val albums = FXCollections.observableArrayList<Album>()
-    fun viewAlbumArtist(albumArtist: AlbumArtist){
+    fun viewAlbumArtist(albumArtist: AlbumArtist) {
         selectedAlbumArtist.set(albumArtist)
     }
+
     lateinit var query: TextField
     fun applyFilter() {
         GlobalScope.launch(Dispatchers.Default) {
@@ -77,31 +84,52 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
             }
         }
         center<BorderPane> {
-            center<TilePane> {
-                this.children.bind(albums) { album ->
-                    VBox().apply {
-                        maxWidth = 192.0
-                        album.coverImage?.also {
-                            imageView(Image(ByteArrayInputStream(it))) {
-                                this.fitHeight = 192.0
-                                this.fitWidth = 192.0
+            top<StackPane> {
+                add<ScrollPane> {
+                    onScroll = EventHandler { event ->
+                        if (event.deltaY > 0 && hvalue >= hmin) {
+                            hvalue -= 0.1
+                        }
+                        if (event.deltaY < 0 && hvalue >= hmin) {
+                            hvalue += 0.1
+                        }
+                    }
+                    hbarPolicy = ScrollPane.ScrollBarPolicy.AS_NEEDED
+                    vbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
+                    isPannable = true
+                    isFitToHeight = true
+                    content = add<HBox> {
+                        this.children.bind(albums) { album ->
+                            VBox().apply {
+                                this.styleClass.add("album")
+                                minWidth = 200.0
+                                maxWidth = 200.0
+                                alignment = Pos.TOP_CENTER
+                                padding = Insets(2.0, 0.0, 0.0, 0.0)
+                                album.coverImage?.also {
+                                    imageView(Image(ByteArrayInputStream(it))) {
+                                        this.fitHeight = 192.0
+                                        this.fitWidth = 192.0
+                                    }
+                                }
+                                label(album.name) {
+                                    maxWidth = 192.0
+                                    this.isWrapText = true
+                                    this.style = "-fx-font-family: 'Noto Sans CJK JP';"
+                                }
+                                onMouseClicked = EventHandler {
+                                    tracks.clear()
+                                    tracks.setAll(library.tracks.filtered { it.albumKey == album.albumKey }
+                                        ?.sortedBy { it.trackNumber }
+                                        ?.sortedBy { it.discNumber })
+                                    this.requestFocus()
+                                }
                             }
-                        }
-                        label(album.name) {
-                            maxWidth = 192.0
-                            this.isWrapText = true
-                            this.style = "-fx-font-family: 'Noto Sans CJK JP';"
-                        }
-                        onMouseClicked = EventHandler {
-                            tracks.clear()
-                            tracks.setAll(library.tracks.filtered { it.albumKey == album.albumKey }
-                                ?.sortedBy { it.trackNumber }
-                                ?.sortedBy { it.discNumber })
                         }
                     }
                 }
             }
-            bottom<StackPane> {
+            center<StackPane> {
                 trackTable(tracks, library, mediaPlayer)
             }
         }
