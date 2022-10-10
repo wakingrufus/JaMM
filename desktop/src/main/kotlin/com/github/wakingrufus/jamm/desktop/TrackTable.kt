@@ -30,6 +30,7 @@ fun Pane.trackTable(
                 column<Track, Int>("Track #") { it.value.trackNumber.toProperty() }
                 column<Track, String>("Artist"){it.value.artist.name.toProperty()}
                 column<Track, Int>("Year") { it.value.releaseDate?.year.toProperty() }
+                column<Track, Number>("Plays") { it.value.playCount.toProperty() }
                 column<Track, String>("Tags") { it.value.tags.joinToString(",").toProperty() }
                 contextMenu {
 

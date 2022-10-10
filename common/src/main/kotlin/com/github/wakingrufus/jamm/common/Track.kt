@@ -15,5 +15,6 @@ data class Track(
     val releaseDate: LocalDate? = null,
     val path: String,
     val tags: MutableSet<String>,
-    val musicBrainzTrackId: String?
+    val musicBrainzTrackId: String?,
+    var playCount: Int = 0
 )

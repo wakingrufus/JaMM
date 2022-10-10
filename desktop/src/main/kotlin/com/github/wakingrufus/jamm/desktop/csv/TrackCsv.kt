@@ -25,7 +25,8 @@ fun CSVRecord.toTrack(baseDir: File): Track {
         tags = mutableSetOf(*(if (tagsString.isBlank()) emptyList() else tagsString.split("|")).toTypedArray()),
         releaseDate = parseDate(get("releaseDate")),
         musicBrainzTrackId = get("musicBrainzTrackId"),
-        file = baseDir.resolve(get("path"))
+        file = baseDir.resolve(get("path")),
+        playCount = get("count").toIntOrNull() ?: 0
     )
 }
 
@@ -53,5 +54,6 @@ val trackCsvFields = listOf(
     CsvField("releaseDate") { it.releaseDate.toString() },
     CsvField("path", Track::path),
     CsvField("tags") { it.tags.joinToString("|") },
-    CsvField("musicBrainzTrackId") { it.musicBrainzTrackId ?: "" }
+    CsvField("musicBrainzTrackId") { it.musicBrainzTrackId ?: "" },
+    CsvField("count") { it.playCount.toString() },
 )
