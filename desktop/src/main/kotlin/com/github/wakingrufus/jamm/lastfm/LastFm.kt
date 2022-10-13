@@ -86,10 +86,5 @@ fun requestSign(params: List<Pair<String, Any>>): String {
             val md = MessageDigest.getInstance("MD5")
             val bytes = md.digest(it.toByteArray(charset = StandardCharsets.UTF_8))
             BigInteger(1, bytes).toString(16).padStart(32, '0')
-//            val sb = StringBuilder()
-//            for (b in bytes) {
-//                sb.append(String.format("%02x", b))
-//            }
-//            sb.toString()
         }
 }

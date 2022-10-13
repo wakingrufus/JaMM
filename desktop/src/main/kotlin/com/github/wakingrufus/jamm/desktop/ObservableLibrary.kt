@@ -16,8 +16,11 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord
 import org.jaudiotagger.audio.AudioFileIO
+import org.jaudiotagger.audio.mp3.MP3File
 import org.jaudiotagger.tag.FieldKey
-import org.jaudiotagger.tag.id3.ID3v23Tag
+import org.jaudiotagger.tag.datatype.DataTypes
+import org.jaudiotagger.tag.id3.*
+import org.jaudiotagger.tag.id3.framebody.AbstractFrameBodyTextInfo
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
@@ -43,14 +46,19 @@ class ObservableLibrary(val rootDir: File) : Logging {
     }
 
     fun getTrackArt(track: Track): ByteArray? {
-        val audioFile = AudioFileIO.read(track.file)
-        return if (audioFile.tag.artworkList.isNotEmpty()) {
-            audioFile.tag.firstArtwork?.binaryData
-        } else if (track.file.parentFile.resolve("cover.jpg").exists()) {
-            track.file.parentFile.resolve("cover.jpg").readBytes()
-        } else if (track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.isNotEmpty()) {
-            track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
+        return if (track.file.exists()) {
+            val audioFile = AudioFileIO.read(track.file)
+            if (audioFile.tag.artworkList.isNotEmpty()) {
+                audioFile.tag.firstArtwork?.binaryData
+            } else if (track.file.parentFile.resolve("cover.jpg").exists()) {
+                track.file.parentFile.resolve("cover.jpg").readBytes()
+            } else if (track.file.parentFile.list { file, s -> s.endsWith(".jpg") }.isNotEmpty()) {
+                track.file.parentFile.listFiles { file, s -> s.endsWith(".jpg") }.first().readBytes()
+            } else {
+                null
+            }
         } else {
+            removeTrack(track)
             null
         }
     }
@@ -68,31 +76,36 @@ class ObservableLibrary(val rootDir: File) : Logging {
     }
 
     fun importCsv() {
-        GlobalScope.launch(Dispatchers.Default) {
-            val csvFile = rootDir.resolve("jamm.csv")
-            val reader = FileReader(csvFile)
-            val headers = trackCsvFields.map { it.header }
-            val records: Iterable<CSVRecord> = CSVFormat.DEFAULT
-                .withHeader(*headers.toTypedArray())
-                .withFirstRecordAsHeader()
-                .parse(reader)
-            val newTracks = records.map {
-                it.toTrack(baseDir = rootDir)
-            }
-            logger().info("reading csv complete")
-            withContext(Dispatchers.JavaFx) {
-                newTracks.forEach {
-                    importTrack(track = it)
-                }
-                logger().info("importing csv complete")
-                listeners.forEach {
-                    it.loadComplete()
-                }
-                tagListeners.forEach {
-                    it.loadComplete()
-                }
-            }
+        val csvFile = rootDir.resolve("jamm.csv")
+        if (csvFile.exists()) {
+            GlobalScope.launch(Dispatchers.Default) {
 
+                val reader = FileReader(csvFile)
+                val headers = trackCsvFields.map { it.header }
+                val records: Iterable<CSVRecord> = CSVFormat.DEFAULT
+                    .withHeader(*headers.toTypedArray())
+                    .withFirstRecordAsHeader()
+                    .parse(reader)
+                val newTracks = records.map {
+                    it.toTrack(baseDir = rootDir)
+                }
+                logger().info("reading csv complete")
+                withContext(Dispatchers.JavaFx) {
+                    newTracks.forEach {
+                        importTrack(track = it)
+                    }
+                    logger().info("importing csv complete")
+                    listeners.forEach {
+                        it.loadComplete()
+                    }
+                    tagListeners.forEach {
+                        it.loadComplete()
+                    }
+                    scan()
+                }
+            }
+        } else {
+            scan()
         }
     }
 
@@ -122,9 +135,31 @@ class ObservableLibrary(val rootDir: File) : Logging {
         AudioFileIO.write(audioFile)
     }
 
+    fun countPlay(track: Track) {
+        track.playCount++
+        val audioFile = AudioFileIO.read(track.file)
+        if (audioFile is MP3File) {
+            if (audioFile.hasID3v2Tag()) {
+                val v2tag = audioFile.iD3v2Tag
+                val countFrame = v2tag.getFirstField(ID3v23Frames.FRAME_ID_V3_PLAY_COUNTER)
+                    ?: v2tag.createFrame(ID3v23Frames.FRAME_ID_V3_PLAY_COUNTER)
+                val body = countFrame.body
+                body.setObjectValue(DataTypes.OBJ_NUMBER, track.playCount)
+                v2tag.setFrame(countFrame)
+                AudioFileIO.write(audioFile)
+                createCSVFile()
+            }
+        }
+    }
+
     fun importTrack(track: Track) {
         tracks.add(track)
         trackPaths[track.path] = track
+    }
+
+    fun removeTrack(track: Track) {
+        tracks.remove(track)
+        trackPaths.remove(track.path)
     }
 
     fun importPlaylist(playlist: Playlist) {
@@ -155,13 +190,10 @@ class ObservableLibrary(val rootDir: File) : Logging {
         GlobalScope.launch(Dispatchers.Default) {
             val newTrackScans = files
                 .filter { Extensions.music.contains(it.extension.toLowerCase()) }
+                .filter { !trackPaths.contains(it.toRelativeString(rootDir)) }
                 .map { readTrack(rootDir, it) }
             newTrackScans.filterIsInstance<ScanResult.ScanFailure>().forEach { logger().error(it.error) }
             val newTracks = newTrackScans.filterIsInstance<ScanResult.TrackSuccess>().map { it.track }
-            withContext(Dispatchers.JavaFx) {
-                trackPaths.clear()
-                tracks.clear()
-            }
             newTracks.chunked(500).forEach {
                 withContext(Dispatchers.JavaFx) {
                     it.forEach { importTrack(it) }

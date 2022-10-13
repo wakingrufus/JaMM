@@ -105,6 +105,10 @@ class JfxMediaPlayerController(
 
     private fun playNext() {
         queue.firstOrNull()?.also { track ->
+            if(!track.file.exists()){
+                library.removeTrack(track)
+                playNext()
+            }
             try {
                 val uri = track.file.toURI().toASCIIString()
                 val media = Media(uri)
@@ -136,6 +140,8 @@ class JfxMediaPlayerController(
                     javaFxMediaPlayer = null
                 } else {
                     logger().error(ex.message, ex)
+                    library.removeTrack(track)
+                    playNext()
                 }
             }
             scrobbledProperty.set(false)
@@ -171,6 +177,7 @@ class JfxMediaPlayerController(
                     lastFm.value?.scrobble(
                         Instant.now().minusSeconds(getCurrentPosition().toLong(DurationUnit.SECONDS)), track
                     )
+                    library.countPlay(track)
                 }
                 progressProperty.set(getProgress())
                 delay(100.toDuration(DurationUnit.MILLISECONDS))

@@ -59,6 +59,9 @@ class Jamm : Application(), Logging {
                                     }
                                 }
                             }
+                            actionItem("Rescan Music Library") {
+                               observableLibrary.scan()
+                            }
                             val lfm = actionItem("Last FM") {
                                 getToken().also { token ->
                                     logger().info("token: " + token.token)
@@ -175,7 +178,7 @@ class Jamm : Application(), Logging {
             primaryStage.scene.stylesheets.add(Jamm::class.java.getResource(style)?.toExternalForm())
             primaryStage.show()
             observableLibrary.importCsv()
-            observableLibrary.scan()
+      //      observableLibrary.scan()
         }
     }
 }

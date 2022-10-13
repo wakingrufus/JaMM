@@ -1,7 +1,10 @@
 package com.github.wakingrufus.jamm.common
 
 import org.jaudiotagger.audio.AudioFile
+import org.jaudiotagger.audio.mp3.MP3File
 import org.jaudiotagger.tag.FieldKey
+import org.jaudiotagger.tag.datatype.DataTypes
+import org.jaudiotagger.tag.id3.ID3v23Frames
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -47,11 +50,11 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         AlbumArtist("*UNKNOWN*")
     }
 
-    val artist = if(tag.hasField(FieldKey.ARTIST)){
+    val artist = if (tag.hasField(FieldKey.ARTIST)) {
         Artist(tag.getFirst(FieldKey.ARTIST))
-    }else if (tag.hasField(FieldKey.ALBUM_ARTIST)) {
+    } else if (tag.hasField(FieldKey.ALBUM_ARTIST)) {
         Artist(tag.getFirst(FieldKey.ALBUM_ARTIST))
-    }else {
+    } else {
         Artist("*UNKNOWN*")
     }
 
@@ -80,6 +83,19 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         scannerLogger.warn("invalid Date ${it.originalValue} in file ${file.name}")
     }
     val date = parsedDates.filterIsInstance<DateParseSuccess>().firstOrNull()?.date
+    val counter = if (audioFile is MP3File) {
+        if (audioFile.hasID3v2Tag()) {
+            val v2tag = audioFile.iD3v2Tag
+            val frame = v2tag.getFirstField(ID3v23Frames.FRAME_ID_V3_PLAY_COUNTER)
+                ?: v2tag.createFrame(ID3v23Frames.FRAME_ID_V3_PLAY_COUNTER)
+            frame.body.getObjectValue(DataTypes.OBJ_NUMBER).toString().toIntOrNull() ?: 0
+        } else {
+            0
+        }
+    } else {
+        0
+    }
+
     val track = Track(
         title = tag.getFirst(FieldKey.TITLE),
         album = albumName,
@@ -92,7 +108,8 @@ fun buildTrack(rootFile: File, file: File, audioFile: AudioFile): ScanResult {
         releaseDate = date,
         path = file.toRelativeString(rootFile),
         tags = tags.toMutableSet(),
-        musicBrainzTrackId = tag.getFirst(FieldKey.MUSICBRAINZ_TRACK_ID)
+        musicBrainzTrackId = tag.getFirst(FieldKey.MUSICBRAINZ_TRACK_ID),
+        playCount = counter
     )
     return ScanResult.TrackSuccess(track)
 }
