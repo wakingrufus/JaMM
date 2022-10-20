@@ -105,7 +105,7 @@ class JfxMediaPlayerController(
 
     private fun playNext() {
         queue.firstOrNull()?.also { track ->
-            if(!track.file.exists()){
+            if (!track.file.exists()) {
                 library.removeTrack(track)
                 playNext()
             }
@@ -147,6 +147,10 @@ class JfxMediaPlayerController(
             scrobbledProperty.set(false)
             GlobalScope.launch(Dispatchers.Default) {
                 lastFm.value?.nowPlaying(track)
+                val lastFmCount = lastFm.value.getPlaycount(track) ?: 0
+                if (lastFmCount > track.playCount) {
+                    library.updatePlayCount(track, lastFmCount)
+                }
             }
             GlobalScope.launch(Dispatchers.JavaFx) {
                 nowPlayingProperty.set(track)

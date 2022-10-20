@@ -19,8 +19,8 @@ import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.audio.mp3.MP3File
 import org.jaudiotagger.tag.FieldKey
 import org.jaudiotagger.tag.datatype.DataTypes
-import org.jaudiotagger.tag.id3.*
-import org.jaudiotagger.tag.id3.framebody.AbstractFrameBodyTextInfo
+import org.jaudiotagger.tag.id3.ID3v23Frames
+import org.jaudiotagger.tag.id3.ID3v23Tag
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
@@ -136,7 +136,11 @@ class ObservableLibrary(val rootDir: File) : Logging {
     }
 
     fun countPlay(track: Track) {
-        track.playCount++
+        updatePlayCount(track, track.playCount + 1)
+    }
+
+    fun updatePlayCount(track: Track, count: Int) {
+        track.playCount = count
         val audioFile = AudioFileIO.read(track.file)
         if (audioFile is MP3File) {
             if (audioFile.hasID3v2Tag()) {
@@ -144,7 +148,7 @@ class ObservableLibrary(val rootDir: File) : Logging {
                 val countFrame = v2tag.getFirstField(ID3v23Frames.FRAME_ID_V3_PLAY_COUNTER)
                     ?: v2tag.createFrame(ID3v23Frames.FRAME_ID_V3_PLAY_COUNTER)
                 val body = countFrame.body
-                body.setObjectValue(DataTypes.OBJ_NUMBER, track.playCount)
+                body.setObjectValue(DataTypes.OBJ_NUMBER, count)
                 v2tag.setFrame(countFrame)
                 AudioFileIO.write(audioFile)
                 createCSVFile()

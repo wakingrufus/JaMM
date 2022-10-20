@@ -1,14 +1,18 @@
 package com.github.wakingrufus.jamm.lastfm
 
 import com.github.kittinunf.fuel.core.ResponseResultOf
+import com.github.kittinunf.fuel.json.responseJson
+import com.github.kittinunf.result.Result
 import com.github.wakingrufus.jamm.common.Track
 import com.github.wakingrufus.jamm.desktop.Logging
+import com.github.wakingrufus.jamm.desktop.globalLogger
 import com.github.wakingrufus.jamm.desktop.logger
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 class LastFmClient(val sessionKey: String) : Logging {
+    var username: String? = null
     fun scrobble(time: Instant, track: Track) {
         val args = mutableListOf(
             "artist" to track.artist.name,
@@ -43,6 +47,53 @@ class LastFmClient(val sessionKey: String) : Logging {
         }
         signedPost("track.updatenowplaying", sessionKey, args).response().also {
             it.logError(logger())
+        }
+    }
+
+    fun getUserName(): String? {
+        val result = signedPost("user.getInfo", sessionKey, emptyList()).responseJson()
+        return when (result.third) {
+            is Result.Success -> result.third.get().obj().getJSONObject("user").getString("name")
+            is Result.Failure -> {
+                globalLogger().warn(result.second.responseMessage)
+                globalLogger().warn(result.second.body().toByteArray().toString(StandardCharsets.UTF_8))
+                null
+            }
+        }
+    }
+
+    fun getPlaycount(track: Track): Int? {
+        if (username == null) {
+            username = getUserName()
+            logger().debug("user=$username")
+        }
+        val args = mutableListOf<Pair<String, Any>>()
+        username?.also {
+            args.add("username" to it)
+        }
+        args.add("artist" to track.artist.name)
+        args.add("track" to track.title)
+//        track.musicBrainzTrackId?.takeIf { it.isNotBlank() }.also {
+//            if (it != null) {
+//                args.add("mbid" to it)
+//            } else {
+//                args.add("artist" to track.artist.name)
+//                args.add("track" to track.title)
+//            }
+//        }
+        val result = unAuthedSignedCall("track.getInfo", args).responseJson()
+        return if (result.third is Result.Failure) {
+            globalLogger().warn(result.second.responseMessage)
+            globalLogger().warn(result.second.body().toByteArray().toString(StandardCharsets.UTF_8))
+            null
+        } else {
+            val jsonObj = result.third.get().obj()
+            if (jsonObj.has("error")) {
+                logger().warn(result.third.get().obj().toString())
+                null
+            } else {
+                result.third.get().obj().getJSONObject("track").getInt("userplaycount")
+            }
         }
     }
 }
