@@ -16,7 +16,7 @@ import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
+class AlbumsView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane() {
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedAlbum = SimpleObjectProperty<AlbumKey>().also {
         it.onChange { selectedAlbumKey ->

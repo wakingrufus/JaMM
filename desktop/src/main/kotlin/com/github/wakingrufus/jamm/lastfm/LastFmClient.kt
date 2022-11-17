@@ -4,14 +4,13 @@ import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.kittinunf.fuel.json.responseJson
 import com.github.kittinunf.result.Result
 import com.github.wakingrufus.jamm.common.Track
-import com.github.wakingrufus.jamm.desktop.Logging
-import com.github.wakingrufus.jamm.desktop.globalLogger
-import com.github.wakingrufus.jamm.desktop.logger
-import org.slf4j.Logger
+import mu.KotlinLogging
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
-class LastFmClient(val sessionKey: String) : Logging {
+private val logger = KotlinLogging.logger {}
+
+class LastFmClient(val sessionKey: String) {
     var username: String? = null
     fun scrobble(time: Instant, track: Track) {
         val args = mutableListOf(
@@ -28,7 +27,7 @@ class LastFmClient(val sessionKey: String) : Logging {
             args.add("mbid" to it)
         }
         signedPost("track.scrobble", sessionKey, args).response().also {
-            it.logError(logger())
+            it.logError()
         }
     }
 
@@ -46,7 +45,7 @@ class LastFmClient(val sessionKey: String) : Logging {
             args.add("mbid" to it)
         }
         signedPost("track.updatenowplaying", sessionKey, args).response().also {
-            it.logError(logger())
+            it.logError()
         }
     }
 
@@ -55,8 +54,8 @@ class LastFmClient(val sessionKey: String) : Logging {
         return when (result.third) {
             is Result.Success -> result.third.get().obj().getJSONObject("user").getString("name")
             is Result.Failure -> {
-                globalLogger().warn(result.second.responseMessage)
-                globalLogger().warn(result.second.body().toByteArray().toString(StandardCharsets.UTF_8))
+                logger.warn(result.second.responseMessage)
+                logger.warn(result.second.body().toByteArray().toString(StandardCharsets.UTF_8))
                 null
             }
         }
@@ -65,7 +64,7 @@ class LastFmClient(val sessionKey: String) : Logging {
     fun getPlaycount(track: Track): Int? {
         if (username == null) {
             username = getUserName()
-            logger().debug("user=$username")
+            logger.debug { "user=$username" }
         }
         val args = mutableListOf<Pair<String, Any>>()
         username?.also {
@@ -83,13 +82,13 @@ class LastFmClient(val sessionKey: String) : Logging {
 //        }
         val result = unAuthedSignedCall("track.getInfo", args).responseJson()
         return if (result.third is Result.Failure) {
-            globalLogger().warn(result.second.responseMessage)
-            globalLogger().warn(result.second.body().toByteArray().toString(StandardCharsets.UTF_8))
+            logger.warn(result.second.responseMessage)
+            logger.warn(result.second.body().toByteArray().toString(StandardCharsets.UTF_8))
             null
         } else {
             val jsonObj = result.third.get().obj()
             if (jsonObj.has("error")) {
-                logger().warn(result.third.get().obj().toString())
+                logger.warn(result.third.get().obj().toString())
                 null
             } else {
                 result.third.get().obj().getJSONObject("track").getInt("userplaycount")
@@ -98,7 +97,7 @@ class LastFmClient(val sessionKey: String) : Logging {
     }
 }
 
-fun ResponseResultOf<ByteArray>.logError(logger: Logger) {
+fun ResponseResultOf<ByteArray>.logError() {
     if (third.component2() != null) {
         logger.warn(third.component2()?.message)
         logger.warn(second.statusCode.toString())

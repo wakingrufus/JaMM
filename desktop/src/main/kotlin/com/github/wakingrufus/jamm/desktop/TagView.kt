@@ -11,7 +11,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 
-class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
+class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane() {
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedTag = SimpleObjectProperty<String>().also {
         it.onChange { selected ->

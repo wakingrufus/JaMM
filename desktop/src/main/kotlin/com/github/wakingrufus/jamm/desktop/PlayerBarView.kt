@@ -18,7 +18,7 @@ class PlayerBarView(
     mediaPlayerController: MediaPlayerController,
     viewAlbum: (AlbumKey) -> Unit,
     viewAlbumArtist : (AlbumArtist) -> Unit
-) : HBox(), Logging {
+) : HBox() {
     init {
         val playButton = ImageView(Image(PlayerBarView::class.java.getResourceAsStream("/play-white.png"))).apply {
             this.fitHeight = 64.0

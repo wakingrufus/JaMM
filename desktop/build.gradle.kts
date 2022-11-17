@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     application
     kotlin("jvm")
-    id("org.openjfx.javafxplugin") version "0.0.10"
+    id("org.openjfx.javafxplugin") version "0.0.13"
     id("org.beryx.jlink") version "2.24.1"
     id("org.javamodularity.moduleplugin")
 }
@@ -12,10 +12,11 @@ dependencies {
     implementation(project(":common"))
     implementation(kotlin("reflect"))
     implementation("org.slf4j:slf4j-api:1.7.30")
-    implementation("ch.qos.logback:logback-classic:1.2.3")
-    implementation("ch.qos.logback:logback-core:1.2.3")
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.2")
+    implementation("ch.qos.logback:logback-classic:1.2.9")
+    implementation("ch.qos.logback:logback-core:1.2.9")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.5.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.6.4")
     implementation("com.github.trilarion:java-vorbis-support:1.2.1")
     implementation("com.github.kittinunf.fuel:fuel-json:2.3.1")
     implementation("org.json:json:20200518")
@@ -46,8 +47,8 @@ java {
     }
 }
 javafx {
-    version = "16"
-    modules("javafx.controls", "javafx.media")
+    version = "17.0.2"
+    modules("javafx.base", "javafx.controls", "javafx.media")
 }
 
 jlink {
@@ -97,10 +98,8 @@ application {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
-}
-
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.kotlinOptions {
-    languageVersion = "1.4"
+    kotlinOptions{
+        languageVersion = "1.7"
+        jvmTarget = "17"
+    }
 }

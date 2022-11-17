@@ -2,8 +2,8 @@ enableFeaturePreview("VERSION_CATALOGS")
 
 pluginManagement {
     plugins {
-        kotlin("multiplatform") version "1.5.30"
-        kotlin("jvm") version "1.5.30"
+    //    kotlin("multiplatform") version "1.5.30"
+        kotlin("jvm") version "1.6.20"
         id("org.javamodularity.moduleplugin") version "1.8.10"
     }
 }

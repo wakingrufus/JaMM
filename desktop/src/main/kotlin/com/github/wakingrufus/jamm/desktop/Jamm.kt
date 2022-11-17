@@ -10,7 +10,6 @@ import javafx.application.Application
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
-import javafx.event.EventHandler
 import javafx.geometry.Side
 import javafx.scene.control.ButtonType
 import javafx.scene.control.Dialog
@@ -20,21 +19,24 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.VBox
 import javafx.stage.DirectoryChooser
 import javafx.stage.Stage
+import mu.KotlinLogging
 import java.io.File
 import java.nio.file.Paths
 
 
-class Jamm : Application(), Logging {
+private val logger = KotlinLogging.logger {}
+
+class Jamm : Application() {
 
     val libraryPath: SimpleStringProperty = SimpleStringProperty(
         getPreference(Preference.LIBRARY_PATH, File(System.getProperty("user.home")).resolve("Music").path)
     )
     val lastFmClientProperty = SimpleObjectProperty<LastFmClient>()
     override fun start(primaryStage: Stage) {
-        logger().info("starting")
+        logger.info("starting")
         val f = Paths.get(libraryPath.value).toFile()
         if (!f.exists()) {
-            logger().error("Music directory not found")
+            logger.error("Music directory not found")
         } else {
             val observableLibrary = ObservableLibrary(f)
 
@@ -60,11 +62,11 @@ class Jamm : Application(), Logging {
                                 }
                             }
                             actionItem("Rescan Music Library") {
-                               observableLibrary.scan()
+                                observableLibrary.scan()
                             }
                             val lfm = actionItem("Last FM") {
                                 getToken().also { token ->
-                                    logger().info("token: " + token.token)
+                                    logger.info { "token: " + token.token }
                                     hostServices.showDocument(requestAuthUrl(token))
                                     val popup = Dialog<String>().apply {
                                         contentText = "Log in to last fm in your browser, then close this dialog"
@@ -72,7 +74,7 @@ class Jamm : Application(), Logging {
                                     }
                                     popup.showAndWait()
                                     getSession(token).run {
-                                        logger().info("session key: $this")
+                                        logger.info("session key: $this")
                                         lastFmClientProperty.set(LastFmClient(this))
                                         putPreference(Preference.LASTFM_KEY, this)
                                     }
@@ -81,7 +83,7 @@ class Jamm : Application(), Logging {
                             if (getPreference(Preference.LASTFM_KEY, "").isNotBlank()) {
                                 lfm.isDisable = true
                                 val sessionKey = getPreference(Preference.LASTFM_KEY, "")
-                                logger().info("session key: $sessionKey")
+                                logger.info("session key: $sessionKey")
                                 lastFmClientProperty.set(LastFmClient(sessionKey))
                                 actionItem("Reset Last.fm") {
                                     lastFmClientProperty.set(null)
@@ -104,21 +106,36 @@ class Jamm : Application(), Logging {
                                             putPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF.toString())
                                         }
                                         selectedProperty()
-                                            .set(getPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF) == ContinuousMode.OFF)
+                                            .set(
+                                                getPreference(
+                                                    Preference.CONTINUOUS_MODE,
+                                                    ContinuousMode.OFF
+                                                ) == ContinuousMode.OFF
+                                            )
                                     }
                                     radio(ContinuousMode.TAG.toString()) {
                                         setOnAction {
                                             putPreference(Preference.CONTINUOUS_MODE, ContinuousMode.TAG.toString())
                                         }
                                         selectedProperty()
-                                            .set(getPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF) == ContinuousMode.TAG)
+                                            .set(
+                                                getPreference(
+                                                    Preference.CONTINUOUS_MODE,
+                                                    ContinuousMode.OFF
+                                                ) == ContinuousMode.TAG
+                                            )
                                     }
                                     radio(ContinuousMode.RANDOM.toString()) {
                                         setOnAction {
                                             putPreference(Preference.CONTINUOUS_MODE, ContinuousMode.RANDOM.toString())
                                         }
                                         selectedProperty()
-                                            .set(getPreference(Preference.CONTINUOUS_MODE, ContinuousMode.OFF) == ContinuousMode.RANDOM)
+                                            .set(
+                                                getPreference(
+                                                    Preference.CONTINUOUS_MODE,
+                                                    ContinuousMode.OFF
+                                                ) == ContinuousMode.RANDOM
+                                            )
                                     }
                                 }
                             }
@@ -178,7 +195,7 @@ class Jamm : Application(), Logging {
             primaryStage.scene.stylesheets.add(Jamm::class.java.getResource(style)?.toExternalForm())
             primaryStage.show()
             observableLibrary.importCsv()
-      //      observableLibrary.scan()
+            //      observableLibrary.scan()
         }
     }
 }
