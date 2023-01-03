@@ -12,20 +12,21 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import java.time.Instant
 import javax.sound.sampled.*
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
-import kotlin.time.ExperimentalTime
 import kotlin.time.toDuration
 
-@OptIn(ExperimentalTime::class)
+private val logger = KotlinLogging.logger {}
+
 class JfxMediaPlayerController(
     val queue: ObservableList<Track>,
     val library: ObservableLibrary,
     val lastFm: Property<LastFmClient>
 ) :
-    MediaPlayerController, Logging {
+    MediaPlayerController {
     val nowPlayingProperty = SimpleObjectProperty<Track>()
     val progressProperty = SimpleDoubleProperty()
     val scrobbledProperty = SimpleBooleanProperty()
@@ -48,7 +49,7 @@ class JfxMediaPlayerController(
     }
 
     override fun play(tracks: List<Track>) {
-        logger().info("adding ${tracks.size} to queue")
+        logger.info { "adding ${tracks.size} to queue" }
         stop()
         queue.clear()
         queue.addAll(tracks)
@@ -61,7 +62,7 @@ class JfxMediaPlayerController(
     }
 
     override fun queue(tracks: List<Track>) {
-        logger().info("adding ${tracks.size} to queue")
+        logger.info { "adding ${tracks.size} to queue" }
         queue.addAll(tracks)
     }
 
@@ -123,7 +124,7 @@ class JfxMediaPlayerController(
                 clip = null
             } catch (ex: MediaException) {
                 if (ex.type == MediaException.Type.MEDIA_UNSUPPORTED) {
-                    logger().info("unsupported file: ${track.file.name} falling back to Java SPI")
+                    logger.info { "unsupported file: ${track.file.name} falling back to Java SPI" }
                     val stream = AudioSystem.getAudioInputStream(track.file)
                     val baseFormat: AudioFormat = stream.format
 
@@ -139,7 +140,7 @@ class JfxMediaPlayerController(
                     clip?.addLineListener(stopListener)
                     javaFxMediaPlayer = null
                 } else {
-                    logger().error(ex.message, ex)
+                    logger.error(ex.message, ex)
                     library.removeTrack(track)
                     playNext()
                 }

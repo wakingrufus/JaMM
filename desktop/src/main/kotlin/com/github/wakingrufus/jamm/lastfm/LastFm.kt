@@ -5,11 +5,12 @@ import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.json.responseJson
 import com.github.kittinunf.result.Result
-import com.github.wakingrufus.jamm.desktop.globalLogger
+import mu.KotlinLogging
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
+private val logger = KotlinLogging.logger {}
 object ApiKey {
     val applicationName = "JaMM"
     val key = "d7eea53c03e2110ca5cea5b682493a49"
@@ -33,8 +34,8 @@ fun getSession(token: LastFmToken): String {
     return when (json.third) {
         is Result.Success -> json.third.get().obj().getJSONObject("session").getString("key")
         is Result.Failure -> {
-            globalLogger().warn(json.second.responseMessage)
-            globalLogger().warn(json.second.body().toByteArray().toString(StandardCharsets.UTF_8))
+            logger.warn(json.second.responseMessage)
+            logger.warn(json.second.body().toByteArray().toString(StandardCharsets.UTF_8))
             ""
         }
     }

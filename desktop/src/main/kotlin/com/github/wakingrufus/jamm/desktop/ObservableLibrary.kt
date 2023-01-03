@@ -12,6 +12,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVPrinter
 import org.apache.commons.csv.CSVRecord
@@ -26,7 +27,8 @@ import java.io.FileReader
 import java.io.FileWriter
 import java.util.logging.Level
 
-class ObservableLibrary(val rootDir: File) : Logging {
+private val logger = KotlinLogging.logger {}
+class ObservableLibrary(val rootDir: File) {
     val playlists: ObservableList<Playlist> = FXCollections.observableArrayList()
     val trackPaths: ObservableMap<String, Track> = FXCollections.observableHashMap()
     val tracks: ObservableList<Track> = FXCollections.observableArrayList()
@@ -89,12 +91,12 @@ class ObservableLibrary(val rootDir: File) : Logging {
                 val newTracks = records.map {
                     it.toTrack(baseDir = rootDir)
                 }
-                logger().info("reading csv complete")
+                logger.info("reading csv complete")
                 withContext(Dispatchers.JavaFx) {
                     newTracks.forEach {
                         importTrack(track = it)
                     }
-                    logger().info("importing csv complete")
+                    logger.info("importing csv complete")
                     listeners.forEach {
                         it.loadComplete()
                     }
@@ -182,7 +184,7 @@ class ObservableLibrary(val rootDir: File) : Logging {
         ID3v23Tag.logger.level = Level.WARNING
 
         val files = rootDir.flatten()
-        logger().info("${files.size} files found")
+        logger.info{"${files.size} files found"}
         GlobalScope.launch(Dispatchers.Default) {
             val newPlayLists = files
                 .filter { it.name.endsWith(".m3u") }
@@ -196,7 +198,7 @@ class ObservableLibrary(val rootDir: File) : Logging {
                 .filter { Extensions.music.contains(it.extension.toLowerCase()) }
                 .filter { !trackPaths.contains(it.toRelativeString(rootDir)) }
                 .map { readTrack(rootDir, it) }
-            newTrackScans.filterIsInstance<ScanResult.ScanFailure>().forEach { logger().error(it.error) }
+            newTrackScans.filterIsInstance<ScanResult.ScanFailure>().forEach { logger.error(it.error) }
             val newTracks = newTrackScans.filterIsInstance<ScanResult.TrackSuccess>().map { it.track }
             newTracks.chunked(500).forEach {
                 withContext(Dispatchers.JavaFx) {
@@ -209,7 +211,7 @@ class ObservableLibrary(val rootDir: File) : Logging {
             tagListeners.forEach {
                 it.loadComplete()
             }
-            logger().info("scanned ${newTrackScans.size} tracks")
+            logger.info{"scanned ${newTrackScans.size} tracks"}
             createCSVFile()
         }
     }

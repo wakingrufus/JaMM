@@ -19,12 +19,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import java.io.ByteArrayInputStream
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
+import kotlin.time.DurationUnit
 
-@OptIn(ExperimentalTime::class)
+private val logger = KotlinLogging.logger {}
+
 class NowPlayingView(
     val library: ObservableLibrary,
     val mediaPlayerController: MediaPlayerController,
@@ -32,7 +33,7 @@ class NowPlayingView(
     viewAlbum: (AlbumKey) -> Unit,
     viewAlbumArtist: (AlbumArtist) -> Unit,
     viewTag: (String) -> Unit
-) : BorderPane(), Logging {
+) : BorderPane() {
     init {
         center<BorderPane> {
             center<BorderPane> {
@@ -125,7 +126,7 @@ class NowPlayingView(
                 val total = right<Label> {
                     this.maxWidth(120.0)
                 }
-                val loadingLabel = top<Label>{
+                val loadingLabel = top<Label> {
                     text = "Loading Library..."
                 }
                 library.addListener {
@@ -171,7 +172,7 @@ class NowPlayingView(
     }
 
     fun formatTime(duration: Duration): String {
-        val seconds: Long = duration.toLong(TimeUnit.SECONDS)
+        val seconds: Long = duration.toLong(DurationUnit.SECONDS)
         val HH = seconds / 3600
         val MM = seconds % 3600 / 60
         val SS = seconds % 60

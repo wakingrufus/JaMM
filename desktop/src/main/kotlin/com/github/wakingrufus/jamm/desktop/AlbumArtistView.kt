@@ -23,8 +23,10 @@ import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
+import java.util.*
+import kotlin.Comparator
 
-class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane(), Logging {
+class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerController) : BorderPane() {
     val albumArtists: ObservableList<AlbumArtist> = FXCollections.observableArrayList()
     val tracks = FXCollections.observableArrayList<Track>()
     val selectedAlbumArtist = SimpleObjectProperty<AlbumArtist>().also {
@@ -54,10 +56,10 @@ class AlbumArtistView(val library: ObservableLibrary, val mediaPlayer: MediaPlay
         GlobalScope.launch(Dispatchers.Default) {
             val filtered = if (query.text.isNotBlank()) {
                 library.tracks.grouped { it.albumArtist }
-                    .filtered { it.name.toLowerCase().contains(query.text.toLowerCase()) }
+                    .filtered { it.name.lowercase(Locale.getDefault()).contains(query.text.lowercase(Locale.getDefault())) }
             } else {
                 library.tracks.grouped { it.albumArtist }
-            }.sorted(Comparator.comparing { it.name.toLowerCase() })
+            }.sorted(Comparator.comparing { it.name.lowercase(Locale.getDefault()) })
             withContext(Dispatchers.JavaFx) {
                 albumArtists.clear()
                 albumArtists.setAll(filtered)
