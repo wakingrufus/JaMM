@@ -194,8 +194,7 @@ class Jamm : Application() {
             val style = if (getPreference(Preference.DARK_MODE, "true").toBoolean()) "/dark.css" else "/light.css"
             primaryStage.scene.stylesheets.add(Jamm::class.java.getResource(style)?.toExternalForm())
             primaryStage.show()
-            observableLibrary.importCsv()
-            //      observableLibrary.scan()
+                  observableLibrary.scan()
         }
     }
 }

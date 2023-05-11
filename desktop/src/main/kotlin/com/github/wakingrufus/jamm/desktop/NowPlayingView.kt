@@ -6,12 +6,12 @@ import com.github.wakingrufus.jamm.common.Track
 import com.github.wakingrufus.javafx.*
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import javafx.event.EventHandler
 import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
 import javafx.scene.control.ScrollPane
+import javafx.scene.control.TextField
 import javafx.scene.image.Image
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -20,6 +20,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import org.controlsfx.control.SearchableComboBox
 import java.io.ByteArrayInputStream
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -42,14 +43,20 @@ class NowPlayingView(
                         val tagList = FXCollections.observableList(track.tags.toMutableList())
                         left<VBox> {
                             label("Tags")
-                            add<HBox> {
-                                autoComplete(library.tracks.mapped { it.tags }.flattened().grouped { it }) {
-                                    onAction = EventHandler {
-                                        library.setTags(track, track.tags.plus(text))
-                                        tagList.add(text)
+                            val allTags = library.tracks
+                                .mapped { it.tags }
+                                .flattened()
+                                .grouped { it }
+                                .sorted()
+                            children.add(SearchableComboBox(allTags).apply {
+                                selectionModel.selectedItemProperty().addListener { _, o, selectedItem ->
+                                    if (!tagList.contains(selectedItem)) {
+                                        library.setTags(track, track.tags.plus(selectedItem))
+                                        tagList.add(selectedItem)
                                     }
                                 }
-                            }
+                            })
+
                             add<VBox> {
                                 children.bind(tagList) { tag ->
                                     BorderPane().apply {
@@ -68,12 +75,26 @@ class NowPlayingView(
                                         }
                                         right<StackPane> {
                                             button("x") {
-                                                action {
+                                                setOnAction {
                                                     tagList.remove(tag)
                                                     library.setTags(track, track.tags.minus(tag))
                                                 }
                                             }
                                         }
+                                    }
+                                }
+                            }
+                            add<HBox> {
+                                val newTagBox = add<TextField> {
+                                    setOnAction {
+                                        library.setTags(track, track.tags.plus(text))
+                                        tagList.add(text)
+                                    }
+                                }
+                                button("Create Tag") {
+                                    setOnAction {
+                                        library.setTags(track, track.tags.plus(newTagBox.text))
+                                        tagList.add(newTagBox.text)
                                     }
                                 }
                             }
@@ -163,6 +184,11 @@ class NowPlayingView(
                             label(" - ")
                             label(track.albumArtist.name) {
                                 style = "-fx-font-family: 'Noto Sans CJK JP'; -fx-font-weight: bold;"
+                            }
+                            button("x") {
+                                setOnAction {
+                                    queue.remove(track)
+                                }
                             }
                         }
                     }

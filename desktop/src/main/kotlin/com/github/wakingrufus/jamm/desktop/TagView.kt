@@ -45,7 +45,7 @@ class TagView(val library: ObservableLibrary, val mediaPlayer: MediaPlayerContro
                 val oldSelection = selectedTag.get()
                 GlobalScope.launch(Dispatchers.JavaFx) {
                     tagList.clear()
-                    tagList.addAll(library.tracks.flatMapUnique { it.tags }.sorted())
+                    tagList.addAll(library.tracks.flatMap { it.tags }.toSet().sorted())
                     if (oldSelection != null) {
                         listView.selectionModel.select(oldSelection)
                     }
