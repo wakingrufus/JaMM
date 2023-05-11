@@ -10,7 +10,7 @@ java {
 }
 
 dependencies {
-    implementation("org.slf4j:slf4j-api:1.7.30")
+    implementation("org.slf4j:slf4j-api:2.0.7")
     api("net.jthink:jaudiotagger:3.0.1")
     implementation(kotlin("reflect"))
 }

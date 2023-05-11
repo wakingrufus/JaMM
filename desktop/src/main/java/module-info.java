@@ -18,7 +18,6 @@ module jamm.desktop {
     requires fuel.json;
     requires org.json;
     requires commons.csv;
-    requires kotlin.logging.jvm;
     requires org.controlsfx.controls;
 
     exports com.github.wakingrufus.jamm.desktop;
