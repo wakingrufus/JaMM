@@ -4,7 +4,7 @@ plugins {
     application
     kotlin("jvm")
     id("org.openjfx.javafxplugin") version "0.0.14"
-    id("org.beryx.jlink") version "2.24.1"
+    id("org.beryx.jlink") version "2.26.0"
     id("org.javamodularity.moduleplugin")
 }
 project.description = "JavaFx Music Manager"
