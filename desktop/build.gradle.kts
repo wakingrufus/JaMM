@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     application
     kotlin("jvm")
-    id("org.openjfx.javafxplugin") version "0.0.13"
+    id("org.openjfx.javafxplugin") version "0.0.14"
     id("org.beryx.jlink") version "2.24.1"
     id("org.javamodularity.moduleplugin")
 }
@@ -21,6 +21,7 @@ dependencies {
     implementation("com.github.kittinunf.fuel:fuel-json:2.3.1")
     implementation("org.json:json:20200518")
     implementation("org.apache.commons:commons-csv:1.4")
+    implementation("org.controlsfx:controlsfx:11.1.2")
 
     if (org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
         implementation("org.openjfx:javafx-base:${javafx.version}:win")
@@ -43,11 +44,11 @@ tasks.withType(Test::class.java) {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(19))
     }
 }
 javafx {
-    version = "17.0.2"
+    version = "21-ea+5"
     modules("javafx.base", "javafx.controls", "javafx.media")
 }
 
@@ -100,6 +101,5 @@ application {
 tasks.withType<KotlinCompile> {
     kotlinOptions{
         languageVersion = "1.7"
-        jvmTarget = "17"
     }
 }

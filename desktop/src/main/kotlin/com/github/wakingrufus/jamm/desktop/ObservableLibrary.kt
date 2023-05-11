@@ -1,8 +1,6 @@
 package com.github.wakingrufus.jamm.desktop
 
 import com.github.wakingrufus.jamm.common.*
-import com.github.wakingrufus.jamm.desktop.csv.toTrack
-import com.github.wakingrufus.jamm.desktop.csv.trackCsvFields
 import com.github.wakingrufus.jamm.library.LibraryListener
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
@@ -13,9 +11,6 @@ import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
-import org.apache.commons.csv.CSVFormat
-import org.apache.commons.csv.CSVPrinter
-import org.apache.commons.csv.CSVRecord
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.audio.mp3.MP3File
 import org.jaudiotagger.tag.FieldKey
@@ -23,8 +18,7 @@ import org.jaudiotagger.tag.datatype.DataTypes
 import org.jaudiotagger.tag.id3.ID3v23Frames
 import org.jaudiotagger.tag.id3.ID3v23Tag
 import java.io.File
-import java.io.FileReader
-import java.io.FileWriter
+import java.util.*
 import java.util.logging.Level
 
 private val logger = KotlinLogging.logger {}
@@ -77,53 +71,6 @@ class ObservableLibrary(val rootDir: File) {
                 })
     }
 
-    fun importCsv() {
-        val csvFile = rootDir.resolve("jamm.csv")
-        if (csvFile.exists()) {
-            GlobalScope.launch(Dispatchers.Default) {
-
-                val reader = FileReader(csvFile)
-                val headers = trackCsvFields.map { it.header }
-                val records: Iterable<CSVRecord> = CSVFormat.DEFAULT
-                    .withHeader(*headers.toTypedArray())
-                    .withFirstRecordAsHeader()
-                    .parse(reader)
-                val newTracks = records.map {
-                    it.toTrack(baseDir = rootDir)
-                }
-                logger.info("reading csv complete")
-                withContext(Dispatchers.JavaFx) {
-                    newTracks.forEach {
-                        importTrack(track = it)
-                    }
-                    logger.info("importing csv complete")
-                    listeners.forEach {
-                        it.loadComplete()
-                    }
-                    tagListeners.forEach {
-                        it.loadComplete()
-                    }
-                    scan()
-                }
-            }
-        } else {
-            scan()
-        }
-    }
-
-    fun createCSVFile() {
-        val csvFile = rootDir.resolve("jamm.csv")
-        val out = FileWriter(csvFile)
-        val headers = trackCsvFields.map { it.header }
-        CSVPrinter(out, CSVFormat.DEFAULT.withHeader(*headers.toTypedArray())).use { printer ->
-            tracks.forEach { track ->
-                printer.printRecord(
-                    trackCsvFields.map { it.getter.invoke(track) }
-                )
-            }
-        }
-    }
-
     fun setTags(track: Track, newTags: Set<String>) {
         GlobalScope.launch(Dispatchers.JavaFx) {
             track.tags.clear()
@@ -153,7 +100,6 @@ class ObservableLibrary(val rootDir: File) {
                 body.setObjectValue(DataTypes.OBJ_NUMBER, count)
                 v2tag.setFrame(countFrame)
                 AudioFileIO.write(audioFile)
-                createCSVFile()
             }
         }
     }
@@ -195,16 +141,16 @@ class ObservableLibrary(val rootDir: File) {
         }
         GlobalScope.launch(Dispatchers.Default) {
             val newTrackScans = files
-                .filter { Extensions.music.contains(it.extension.toLowerCase()) }
+                .filter { Extensions.music.contains(it.extension.lowercase(Locale.getDefault())) }
                 .filter { !trackPaths.contains(it.toRelativeString(rootDir)) }
-                .map { readTrack(rootDir, it) }
-            newTrackScans.filterIsInstance<ScanResult.ScanFailure>().forEach { logger.error(it.error) }
-            val newTracks = newTrackScans.filterIsInstance<ScanResult.TrackSuccess>().map { it.track }
-            newTracks.chunked(500).forEach {
-                withContext(Dispatchers.JavaFx) {
-                    it.forEach { importTrack(it) }
-                }
-            }
+                .map {
+                    val result = readTrack(rootDir, it)
+                    when(result){
+                        is ScanResult.ScanFailure -> logger.error(result.error)
+                        is ScanResult.TrackSuccess -> importTrack(result.track)
+                    }
+                    result
+                }.filterIsInstance<ScanResult.TrackSuccess>()
             listeners.forEach {
                 it.loadComplete()
             }
@@ -212,7 +158,6 @@ class ObservableLibrary(val rootDir: File) {
                 it.loadComplete()
             }
             logger.info{"scanned ${newTrackScans.size} tracks"}
-            createCSVFile()
         }
     }
 
