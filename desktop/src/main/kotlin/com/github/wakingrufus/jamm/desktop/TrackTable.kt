@@ -28,7 +28,7 @@ fun Pane.trackTable(
                 column<Track, String>("Album") { it.value?.album.toProperty() }
                 column<Track, Int>("Disc") { it.value.discNumber.toProperty() }
                 column<Track, Int>("Track #") { it.value.trackNumber.toProperty() }
-                column<Track, String>("Artist"){it.value.artist.name.toProperty()}
+                column<Track, String>("Artist") { it.value.artist.name.toProperty() }
                 column<Track, Int>("Year") { it.value.releaseDate?.year.toProperty() }
                 column<Track, Number>("Plays") { it.value.playCount.toProperty() }
                 column<Track, String>("Tags") { it.value.tags.joinToString(",").toProperty() }
@@ -61,7 +61,14 @@ fun Pane.trackTable(
                     }
                     this.onShown = EventHandler {
                         subMenu.items.clear()
-                        library.tracks.flatMapUnique { it.tags }.sorted().forEach { tag ->
+                        val selectedTrack = { this@tableView.selectionModel?.selectedItems?.first() }
+                        val presetAddableTags =
+                            selectedTrack()?.let { listOf("bestof-" + it.releaseDate?.year) } ?: listOf()
+                        val addableTags = library.tracks.flatMapUnique { it.tags }
+                            .sorted()
+                            .filter { !it.startsWith("bestof-") }
+                            .filter { selectedTrack() == null || !selectedTrack()!!.tags.contains(it) }
+                        (presetAddableTags + addableTags).forEach { tag ->
                             subMenu.actionItem(tag) {
                                 this@tableView.selectionModel?.selectedItems?.run {
                                     this.forEach {
